@@ -4,3 +4,4 @@
 /src/csharp/makefiles/SimpleTest/obj
 /src/csharp/makefiles/SimpleTest/bin
 /third_party/swigwin-2.0.2
+/build*
