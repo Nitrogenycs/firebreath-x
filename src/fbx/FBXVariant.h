@@ -14,6 +14,11 @@
         type = name;                       \
     }
 
+namespace FB {
+    class JSAPI;
+}
+
+
 class fbxvariant
 {
 public:
@@ -32,6 +37,7 @@ public:
     fbxvariant_entry(unsigned char, uchar)
     fbxvariant_entry(long long, int64)
     fbxvariant_entry(unsigned long long, uint64)
+    fbxvariant_entry(FB::JSAPI, object)
     
     void set(const FB::variant& Var)
     {
@@ -53,6 +59,7 @@ public:
         type_entry(unsigned char, uchar)
         type_entry(long long, int64)
         type_entry(unsigned long long, uint64)
+        type_entry(FB::JSAPI, object)
     }
 
     std::string get_type() const {
