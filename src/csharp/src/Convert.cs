@@ -33,6 +33,13 @@ namespace FireBreath
                     return value.get_int64();
                 case "uint64":
                     return value.get_uint64();
+                case "null":
+                    return null;
+                case "empty":
+                    // return Empty;
+                    return null;
+                case "jsapi":
+                    return value.get_uint64();
                 default:
                     // throw bad cast exception here?
                     return null;
@@ -66,6 +73,12 @@ namespace FireBreath
                 result.set((Int64)value);
             else if (value is UInt64)
                 result.set((UInt64)value);
+            else if (value == null)
+                result.set_null();
+            //else if (value == Empty)
+            //    result.set_empty();
+            else if (value is JSAPI)
+                result.set((JSAPI)value);
             else
             {
                 // throw bad cast exception here?

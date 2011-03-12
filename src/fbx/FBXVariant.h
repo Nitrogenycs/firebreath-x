@@ -17,10 +17,7 @@
         type = #name;                      \
     }
 
-namespace FB {
-    class JSAPI;
-}
-
+class FBXJSAPI;
 
 class fbxvariant
 {
@@ -40,8 +37,31 @@ public:
     fbxvariant_entry(unsigned char, uchar)
     fbxvariant_entry(long long, int64)
     fbxvariant_entry(unsigned long long, uint64)
-    fbxvariant_entry(FB::JSAPI*, object)
-    
+
+    void set_empty() {
+        var = FB::FBVoid();
+        type = "empty";
+    }
+    bool is_empty() {
+        return var.empty();
+    }
+
+    void set_null() {
+        var = FB::FBNull();
+        type = "null";
+    }
+    bool is_null() {
+        return var.is_null();
+    }
+
+    void set(FB::JSAPI* value) {
+        var = FB::JSAPIPtr(value);
+        type = "jsapi";
+    }
+    FB::JSAPI* get_object () {
+        return var.cast<FB::JSAPIPtr>().get();
+    }
+
     void set(const FB::variant& Var)
     {
         var = Var;
@@ -62,7 +82,9 @@ public:
         type_entry(unsigned char, uchar)
         type_entry(long long, int64)
         type_entry(unsigned long long, uint64)
-        type_entry(FB::JSAPI*, object)
+        type_entry(FB::FBVoid(), empty)
+        type_entry(FB::FBNull(), null)
+        type_entry(FB::JSAPIPtr, jsapi)
     }
 
     std::string get_type() const {

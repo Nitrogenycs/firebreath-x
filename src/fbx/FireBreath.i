@@ -18,6 +18,8 @@
 %include "FBXVariant.h"
 %template(VariantVector) std::vector<fbxvariant>;
 
+%ignore FB::JSAPI::JSAPI;
+
 namespace FB
 {
     typedef int SecurityZone;
@@ -28,12 +30,20 @@ namespace FB
         SecurityScope_Private = 4,
         SecurityScope_Local = 6
     };
+    
+    class JSAPI
+    {
+    public:
+		JSAPI();
+		virtual
+		~JSAPI();
+    };
 }
 
 
 %feature("director") FBXJSAPI;
 
-class FBXJSAPI
+class FBXJSAPI : public FB::JSAPI
 {
 public:
     FBXJSAPI()
