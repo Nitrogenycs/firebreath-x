@@ -1,0 +1,44 @@
+World Domination Plan
+=====================
+
+firebreath.net
+--------------
+
+Overview
+........
+
+1) Browser loads plugin.dll
+2) plugin.dll is comprised of c# swig wrapper and fb plugin
+3) plugin.dll starts a .net/mono host like mentioned here 
+http://msdn.microsoft.com/en-us/magazine/cc163567.aspx
+http://www.mono-project.com/Embedding_Mono
+
+4) Host loads c# .dll and invokes entry point
+5) Entry point returns C++ pointer to JSAPI object
+
+Control Flow:
+.............
+
+1) In JS:  var api = plugin.loadExtension(‘MyExtension’);
+2) This ends up in the TestPlugin’s JSAPI which has a registered “loadExtension(name, options)” method
+3) The C++ loadExtension() method first checks dll/so’s signature. if valid, creates the clr host
+4) C# dll is loaded. C# dll loads plugin.dll “again”, because the swig wrapper is contained in there
+5) Getting the entry point from c# creates a new JSAPI object in C++ along with the C# proxy. The C# proxy holds a pointer to some global data.The return of the entry point is the raw C++ pointer value of the C# proxy.
+6) The C++ side receives the raw pointer and casts it to a JSAPI object which it returns to FB
+7) FB returns the JSAPI object back to JS
+8) in JS api is now an object
+9) user does api.ShowMessage() in JS
+10) NPAPI calls FB which calls the C++ director JSAPI object. This calls the C# method GetProperty(“ShowMessage”). 
+11) In C# we create and return a new JSAPI object. The object’s wrapped data is set to a function pointer to ShowMessage. When it’s Invoke(methodName, args) method is called with an empty methodName (=””) the wrapped function object is called, thus displaying the C# message box.
+12) The function can also return a new JSAPI object as the result of the function.
+
+Things to investigate:
+
+1) Returning types -- I think this is just as easy as declaring a new JSAPI which wraps a C# System.Type and when invoked instantiating it with System.Activator.
+
+Comments/Questions:
+...................
+
+- about 9./10. (calling c# method from js): this lookup and wrapping would be done on each call. Is it possible to have some central method that gathers a full instance?
+var bla = api.new(‘MyClass’) 
+bla.showMessage() // JSAPI already  there (possible?)
