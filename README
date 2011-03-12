@@ -1,0 +1,33 @@
+Purpose
+-------
+
+A small library to interface FireBreath's JSAPI with C#/.Net and Python.
+
+This way you can embed JavaScript objects into your browser which are C#/Python scripted.
+
+For more information about FireBreath see http://www.firebreath.org .
+
+Building
+-----------
+
+After cloning this repository, you first need to generate the makefiles:
+
+cd tests
+..\FireBreath\prep2008 . ..\FireBreath
+
+You can then open the generated Visual Studio Solution (on Windows) at:
+
+FireBreath\projects\fbv8testplugin\fbv8testplugin.sln
+
+Next step is building v8. This was a bity hairy on my machine. Get the neccessary dependencies as listed here:
+
+http://code.google.com/intl/de-DE/apis/v8/build.html
+http://code.google.com/p/v8/wiki/BuildingOnWindows
+
+Then I had to open a shell and execute
+
+"c:\Program Files (x86)\Microsoft Visual Studio 9.0\Vc\vcvarsall.bat"
+scons mode=debug env="PATH:%PATH%,INCLUDE:%INCLUDE%,LIB:%LIB%"
+
+This builds the v8 static debug library.
+
