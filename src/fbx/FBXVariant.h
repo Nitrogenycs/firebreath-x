@@ -41,8 +41,8 @@ public:
 
     void set(const FB::variant& Var);
 
-    std::string get_type();
-    FB::variant get_variant();
+    std::string get_type() const;
+    FB::variant get_variant() const;
 
 protected:
     FB::variant var;
