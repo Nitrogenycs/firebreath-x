@@ -1,10 +1,9 @@
 ﻿using System;
-using System.Windows.Forms;
 using FireBreath;
 
 namespace FireBreath
 {
-    public class JSAPI : FBNetJSAPI
+    public class JSAPI : FBXJSAPI
     {
         object wrappedObject;
 
@@ -15,8 +14,8 @@ namespace FireBreath
 
         public override StringVector getMemberNames()
         {
-            Type type = typeof(Globals);
-            if (type is Type)
+            Type type = wrappedObject.GetType();
+            if (type == typeof(Type))
             {
             }
             type.GetMembers();
@@ -39,20 +38,20 @@ namespace FireBreath
             return true;
         }
 
-        public override bool GetProperty(int idx, fbnetvariant value)
+        public override bool GetProperty(int idx, fbxvariant value)
         {
             return true;
         }
-        public override bool GetProperty(string propertyName, fbnetvariant value)
+        public override bool GetProperty(string propertyName, fbxvariant value)
         {
             return true;
         }
 
-        public override bool SetProperty(int idx, fbnetvariant value)
+        public override bool SetProperty(int idx, fbxvariant value)
         {
             return true;
         }
-        public override bool SetProperty(string propertyName, fbnetvariant value)
+        public override bool SetProperty(string propertyName, fbxvariant value)
         {
             return true;
         }
@@ -62,7 +61,7 @@ namespace FireBreath
             return false;
         }
 
-        public override bool Invoke(string methodName, VariantVector args, fbnetvariant result)
+        public override bool Invoke(string methodName, VariantVector args, fbxvariant result)
         {
             return true;
         }

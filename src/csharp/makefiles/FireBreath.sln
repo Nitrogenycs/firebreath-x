@@ -1,0 +1,26 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 11.00
+# Visual C# Express 2010
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "FireBreath", "FireBreath\FireBreath.csproj", "{C5C75B5D-51D9-434E-8B2A-46E82C311311}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SimpleTest", "SimpleTest\SimpleTest.csproj", "{728A4553-0540-43DD-93DE-6D22D118D3ED}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{C5C75B5D-51D9-434E-8B2A-46E82C311311}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{C5C75B5D-51D9-434E-8B2A-46E82C311311}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{C5C75B5D-51D9-434E-8B2A-46E82C311311}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{C5C75B5D-51D9-434E-8B2A-46E82C311311}.Release|Any CPU.Build.0 = Release|Any CPU
+		{728A4553-0540-43DD-93DE-6D22D118D3ED}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{728A4553-0540-43DD-93DE-6D22D118D3ED}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{728A4553-0540-43DD-93DE-6D22D118D3ED}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{728A4553-0540-43DD-93DE-6D22D118D3ED}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+EndGlobal

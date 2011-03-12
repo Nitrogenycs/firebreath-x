@@ -5,7 +5,7 @@ namespace FireBreath
 {
     public static class Convert
     {
-        public static Object ConvertToNet(this fbnetvariant value)
+        public static Object ConvertToNet(this fbxvariant value)
         {
             switch (value.get_type())
             {
@@ -39,9 +39,9 @@ namespace FireBreath
             }
         }
 
-        public static fbnetvariant ConvertFromNet(this Object value)
+        public static fbxvariant ConvertFromNet(this Object value)
         {
-            fbnetvariant result = new fbnetvariant();
+            fbxvariant result = new fbxvariant();
             if (value is bool)
                 result.set((bool)value);
             else if (value is int)
