@@ -1,13 +1,12 @@
 %module(directors="1") FireBreath
 
+%{
+#include <FBXJSAPI.h>
+%}
+
 %include "std_string.i"
 %include "std_wstring.i"
 %include "std_vector.i"
-
-%{
-#include "FBXAPI.h"
-#include "FBXVariant.h"
-%}
 
 %template(StringVector) std::vector<std::string>;
 

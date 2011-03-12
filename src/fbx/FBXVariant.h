@@ -5,7 +5,7 @@
 #include <string>
 
 #define fbxvariant_entry(_type_, name)  \
-    void set(const _type_& value);      \  
+    void set(const _type_& value);      \
     _type_ get_ ## name ();
 
 class FBXJSAPI;
