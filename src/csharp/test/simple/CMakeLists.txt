@@ -17,6 +17,7 @@ file (GLOB GENERAL RELATIVE ${CMAKE_CURRENT_SOURCE_DIR}
     )
 
 file (GLOB WRAPPER RELATIVE ${CMAKE_CURRENT_SOURCE_DIR}
+    ../../../fbx/[^.]*.cpp
     ../../generated/[^.]*.cpp
     ../../generated/[^.]*.h
     )

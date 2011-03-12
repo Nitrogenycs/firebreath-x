@@ -46,9 +46,8 @@ namespace FireBreath
             }
         }
 
-        public static fbxvariant ConvertFromNet(this Object value)
+        public static bool ConvertFromNet(this Object value, fbxvariant result)
         {
-            fbxvariant result = new fbxvariant();
             if (value is bool)
                 result.set((bool)value);
             else if (value is int)
@@ -82,8 +81,9 @@ namespace FireBreath
             else
             {
                 // throw bad cast exception here?
+                return false;
             }
-            return result;
+            return true;
         }
     }   
 }

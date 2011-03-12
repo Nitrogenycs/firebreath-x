@@ -7,16 +7,17 @@ namespace FireBreath
     public class JSAPI : FBXJSAPI
     {
         object wrappedObject;
+        Type type;
 
         public JSAPI(object WrappedObject)
         {
             wrappedObject = WrappedObject;
+            type = wrappedObject.GetType();
         }
 
         public override StringVector getMemberNames()
         {
             StringVector result = new StringVector();
-            Type type = wrappedObject.GetType();
             foreach (MemberInfo memberInfo in type.GetMembers())
             {
                 result.Add(memberInfo.Name);
@@ -26,13 +27,12 @@ namespace FireBreath
 
         public override uint getMemberCount()
         {
-            Type type = wrappedObject.GetType();
             return (uint)type.GetMembers().Length;
         }
 
         public override bool HasProperty(string propertyName)
         {
-            return false;
+            return type.GetMember(propertyName).Length != 0;
         }
         public override bool HasProperty(int idx)
         {
@@ -45,7 +45,8 @@ namespace FireBreath
         }
         public override bool GetProperty(string propertyName, fbxvariant value)
         {
-            return true;
+            MemberInfo info = type.GetMember(propertyName)[0];
+            return info.GetConvertFromNet(value);
         }
 
         public override bool SetProperty(int idx, fbxvariant value)
@@ -54,6 +55,7 @@ namespace FireBreath
         }
         public override bool SetProperty(string propertyName, fbxvariant value)
         {
+            return type.GetMember(propertyName).ConvertFromNet(value);
             return true;
         }
 
