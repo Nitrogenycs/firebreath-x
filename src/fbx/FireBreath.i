@@ -4,10 +4,17 @@
 %include "std_wstring.i"
 %include "std_vector.i"
 
+%{
+#include "FBXAPI.h"
+#include "FBXVariant.h"
+%}
+
 %template(StringVector) std::vector<std::string>;
 
 %ignore fbxvariant::set(const FB::variant& Var);
 %ignore fbxvariant::var;
+%ignore fbxvariant::get_variant;
+
 %include "FBXVariant.h"
 %template(VariantVector) std::vector<fbxvariant>;
 
@@ -32,7 +39,7 @@ public:
     FBXJSAPI()
     {}
     
-    FBXJSAPI( const FB::SecurityZone& securityLevel ) : FB::JSAPI(securityLevel)
+    FBXJSAPI( const FB::SecurityZone& securityLevel )
     {}
         
     virtual
@@ -55,5 +62,5 @@ public:
 
     virtual bool HasMethod(const std::string& methodName) const = 0;
 
-    virtual bool Invoke(const std::string& methodName, const std::vector<fbxvariant>& args, fbxvariant& result) = 0;
+    virtual bool Invoke(const std::string& methodName, const std::vector<fbxvariant>& args, fbxvariant& resultValue) = 0;
 };

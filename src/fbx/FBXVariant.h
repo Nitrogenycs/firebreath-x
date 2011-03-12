@@ -1,3 +1,6 @@
+#ifndef FBXVARIANT_H
+#define FBXVARIANT_H
+
 #include "variant.h"
 #include <string>
 
@@ -11,7 +14,7 @@
 
 #define type_entry(_type_, name)           \
     if (*varType == typeid(_type_)) {      \
-        type = name;                       \
+        type = #name;                      \
     }
 
 namespace FB {
@@ -37,7 +40,7 @@ public:
     fbxvariant_entry(unsigned char, uchar)
     fbxvariant_entry(long long, int64)
     fbxvariant_entry(unsigned long long, uint64)
-    fbxvariant_entry(FB::JSAPI, object)
+    fbxvariant_entry(FB::JSAPI*, object)
     
     void set(const FB::variant& Var)
     {
@@ -59,14 +62,20 @@ public:
         type_entry(unsigned char, uchar)
         type_entry(long long, int64)
         type_entry(unsigned long long, uint64)
-        type_entry(FB::JSAPI, object)
+        type_entry(FB::JSAPI*, object)
     }
 
     std::string get_type() const {
         return type;
     }
 
+    FB::variant get_variant() const {
+        return var;
+    }
+
 protected:
     FB::variant var;
     std::string type;
 };
+
+#endif

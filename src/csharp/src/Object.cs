@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Reflection;
 using FireBreath;
 
 namespace FireBreath
@@ -14,19 +15,19 @@ namespace FireBreath
 
         public override StringVector getMemberNames()
         {
-            Type type = wrappedObject.GetType();
-            if (type == typeof(Type))
-            {
-            }
-            type.GetMembers();
             StringVector result = new StringVector();
-            result.Add("xxx");
+            Type type = wrappedObject.GetType();
+            foreach (MemberInfo memberInfo in type.GetMembers())
+            {
+                result.Add(memberInfo.Name);
+            }
             return result;
         }
 
         public override uint getMemberCount()
         {
-            return 1;
+            Type type = wrappedObject.GetType();
+            return (uint)type.GetMembers().Length;
         }
 
         public override bool HasProperty(string propertyName)
