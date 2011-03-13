@@ -28,4 +28,6 @@ public:
 
     virtual bool Invoke(const std::string& methodName, const std::vector<fbxvariant>& args, fbxvariant& result) = 0;
     virtual FB::variant Invoke(const std::string& methodName, const std::vector<FB::variant>& args);
+
+     virtual fbxvariant Eval(const std::wstring& script) = 0;   
 };

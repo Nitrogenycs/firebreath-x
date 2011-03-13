@@ -7,10 +7,46 @@
 #include "JSObject.h"
 #include "variant_list.h"
 #include "DOM/Document.h"
-
+#include "APITypes.h"
 #include "PyHelloWorldAPI.h"
 
 #include <Python.h>
+
+void __JSAPI_no_delete(FB::JSAPI* ptr) {}
+
+std::string __convert_py_to_string(PyObject* py_str) {
+    Py_ssize_t str_len = PyString_Size(py_str);
+
+    char* c_str = new char[str_len+1];
+    memset(c_str, 0, str_len+1);
+    strcpy_s(c_str, str_len+1, PyString_AsString(py_str));
+    std::string result_str(c_str);
+
+    return result_str;
+}
+
+std::string __get_python_error() {
+        PyObject *type = 0;
+        PyObject *value = 0;
+        PyObject *traceback = 0;
+        PyErr_Fetch(&type, &value, &traceback);
+
+        if (value) {
+            char *tmp;
+            PyObject *str_obj = PyObject_Str(value);
+            Py_XINCREF(type);
+            PyErr_Clear();
+            PyObject* msg = PyErr_Format(type, "%s", tmp = PyString_AsString(str_obj));
+            std::string result_str = __convert_py_to_string(msg);
+            Py_DECREF(msg);
+            Py_DECREF(str_obj);
+
+            return result_str;
+
+        } else {
+            return "Unknown error";
+        }
+}
 
 ///////////////////////////////////////////////////////////////////////////////
 /// @fn PyHelloWorldAPI::PyHelloWorldAPI(const PyHelloWorldPtr& plugin, const FB::BrowserHostPtr host)
@@ -47,6 +83,8 @@ PyHelloWorldAPI::PyHelloWorldAPI(const PyHelloWorldPtr& plugin, const FB::Browse
     registerEvent("onfired");    
 
     registerMethod("hello_py", make_method(this, &PyHelloWorldAPI::hello_py));
+
+    registerMethod("getHelloPyExtension", make_method(this, &PyHelloWorldAPI::hello_py_extension));
 
 //    registerMethod("eval", make_method(this, &PyHelloWorldAPI::eval));
 }
@@ -129,12 +167,8 @@ FB::variant PyHelloWorldAPI::hello_py()
         py_result = PyDict_GetItem(locals, res_key);
 
         PyObject* py_str = PyObject_Str(py_result);
-        Py_ssize_t str_len = PyString_Size(py_str);
 
-        char* c_str = new char[str_len+1];
-        memset(c_str, 0, str_len+1);
-        strcpy_s(c_str, str_len+1, PyString_AsString(py_str));
-        result_str = std::string(c_str);
+        result_str = __convert_py_to_string(py_str);
 
         Py_XDECREF(py_str);
         Py_XDECREF(py_eval);
@@ -149,5 +183,64 @@ FB::variant PyHelloWorldAPI::hello_py()
     FB::variant result(result_str);
 
     return result;
+}
+
+FB::variant PyHelloWorldAPI::hello_py_extension() {
+
+    if ( hello_py_ext_instance.get() != 0) {
+        return FB::variant(hello_py_ext_instance);
+    }
+
+    PyObject* src = Py_CompileString("from fbx.example.hello_world import HelloWorldExtension \n"\
+                                     "ext = HelloWorldExtension.createJSAPI()\n"\
+                                     "result = ext.this.__long__()\n"\
+                                     "result = 99999999999999999999999999999", 
+                                     "hello_world_extension.py", Py_single_input);
+
+    if(PyErr_Occurred()) {
+        return FB::variant(__get_python_error());
+    }
+
+    std::string result_str;
+
+    JSAPI* jsapi;
+
+    if (src != 0)                         /* compiled just fine - */
+    {
+        PyObject* locals = PyDict_New ();
+
+        PyEval_EvalCode((PyCodeObject *)src, globals, locals);
+
+        if(PyErr_Occurred()) {
+            return FB::variant(__get_python_error());
+        }
+
+        PyObject* py_result;
+        PyObject* res_key = PyString_FromString("result");
+        py_result = PyDict_GetItem(locals, res_key);
+
+        long ptr = PyLong_AsLong(py_result);
+
+        if(1) return FB::variant(ptr);
+
+        jsapi = reinterpret_cast<JSAPI*>(ptr);
+
+        // crashes... don't know why this is not legal
+        //Py_XDECREF(locals);
+
+    } else  {
+        result_str = "Compilation of python src failed.";
+
+        return FB::variant(result_str);
+    }
+
+    // shall take ownership? simpler to leave it in py
+    //  and use no_delete
+    hello_py_ext_instance = FB::JSAPIPtr(jsapi, __JSAPI_no_delete);
+
+    FB::variant result(hello_py_ext_instance);
+
+    return result;
+
 }
 

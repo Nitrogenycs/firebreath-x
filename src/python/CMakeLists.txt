@@ -28,19 +28,6 @@ set (FBPY_MODULE_NAME FireBreath)
 	# set(CMAKE_C_FLAGS_DEBUG "${CMAKE_C_FLAGS_RELEASE}" /MT)
 	# set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE}" /MT)
 	# set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_RELEASE}" /MT)
-	
-add_custom_command(
-	OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/fbx/${FBPY_MODULE_NAME}.py 
-		   ${CMAKE_CURRENT_BINARY_DIR}/fbx/${FBPY_MODULE_NAME}_py_wrap.cpp 
-		   ${CMAKE_CURRENT_BINARY_DIR}/fbx/${FBPY_MODULE_NAME}_py_wrap.h
-	COMMAND ${SWIG_EXE} -c++ -python 
-						-outdir ${CMAKE_CURRENT_BINARY_DIR}/fbx 
-						-o ${CMAKE_CURRENT_BINARY_DIR}/fbx/${FBPY_MODULE_NAME}_py_wrap.cpp 
-						${CMAKE_CURRENT_SOURCE_DIR}/../fbx/FireBreath.i
-#	DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/../fbx/FireBreath.i ${CMAKE_CURRENT_SOURCE_DIR}/../fbx/FBXAPI.h ${CMAKE_CURRENT_SOURCE_DIR}/../fbx/FBXVariant.h
-	COMMENT "Generating python wrapper for firebreath"
-	VERBATIM
-)
 
 include_directories(
 					${BOOST_ROOT}
@@ -60,6 +47,23 @@ set(FBX_SOURCES
 add_library(fbxlib ${FBX_SOURCES})
 #target_link_libraries(fbxlib ScriptingCore)
 
+	
+add_custom_command(
+    TARGET fbxlib
+    PRE_BUILD
+	# OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/fbx/${FBPY_MODULE_NAME}.py 
+		   # ${CMAKE_CURRENT_BINARY_DIR}/fbx/${FBPY_MODULE_NAME}_py_wrap.cpp 
+		   # ${CMAKE_CURRENT_BINARY_DIR}/fbx/${FBPY_MODULE_NAME}_py_wrap.h
+	COMMAND ${SWIG_EXE} -c++ -python 
+						-outdir ${CMAKE_CURRENT_BINARY_DIR}/fbx 
+						-o ${CMAKE_CURRENT_BINARY_DIR}/fbx/${FBPY_MODULE_NAME}_py_wrap.cpp 
+						${CMAKE_CURRENT_SOURCE_DIR}/../fbx/FireBreath.i
+	DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/../fbx/FireBreath.i ${CMAKE_CURRENT_SOURCE_DIR}/../fbx/FBXVariant.h
+	COMMENT "Generating python wrapper for firebreath"
+	VERBATIM
+)
+
+
 link_directories(${PYTHON_LIBRARIES})
 
 add_library(fbx_py MODULE ${CMAKE_CURRENT_BINARY_DIR}/fbx/${FBPY_MODULE_NAME}_py_wrap.cpp)
@@ -72,12 +76,7 @@ add_custom_command(
     POST_BUILD
     COMMAND ${CMAKE_COMMAND} -E copy ${fbx_py_location} ${CMAKE_CURRENT_BINARY_DIR}/fbx/_FireBreath.pyd
     COMMAND ${CMAKE_COMMAND} -E copy ${CMAKE_CURRENT_SOURCE_DIR}/setup.py ${CMAKE_CURRENT_BINARY_DIR}
-    COMMAND ${CMAKE_COMMAND} -E copy ${CMAKE_CURRENT_SOURCE_DIR}/fbx/__init__.py ${CMAKE_CURRENT_BINARY_DIR}/fbx
-    COMMAND ${CMAKE_COMMAND} -E copy ${CMAKE_CURRENT_SOURCE_DIR}/fbx/jsapi.py ${CMAKE_CURRENT_BINARY_DIR}/fbx
-    COMMAND ${CMAKE_COMMAND} -E copy ${CMAKE_CURRENT_SOURCE_DIR}/fbx/conversion.py ${CMAKE_CURRENT_BINARY_DIR}/fbx
+    COMMAND ${CMAKE_COMMAND} -E copy_directory ${CMAKE_CURRENT_SOURCE_DIR}/fbx ${CMAKE_CURRENT_BINARY_DIR}/fbx
+    COMMAND ${CMAKE_COMMAND} -E copy_directory ${CMAKE_CURRENT_SOURCE_DIR}/fbx/example ${CMAKE_CURRENT_BINARY_DIR}/fbx/example
 	COMMAND ${PYTHON_EXECUTABLE} ${CMAKE_CURRENT_BINARY_DIR}/setup.py install
 )
-
-# =============================================================================
-# examples
-# =============================================================================

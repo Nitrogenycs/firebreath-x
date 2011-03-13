@@ -1,8 +1,9 @@
 from FireBreath import *
 
-class JSAPI(FBXJSAPI):
+class PyJSAPI(FBXJSAPI):
 
     def __init__(self, wrappedObj):
+        FBXJSAPI.__init__(self)
         self.wrappedObj = wrappedObj
 
     def getMemberNames(self):
