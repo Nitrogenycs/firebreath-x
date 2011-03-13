@@ -37,7 +37,7 @@
     <Reference Include="System.Windows.Forms" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="..\..\test\simple\Main.cs">
+    <Compile Include="..\..\test\simple\csharp\Main.cs">
       <Link>Main.cs</Link>
     </Compile>
     <Compile Include="Properties\AssemblyInfo.cs" />

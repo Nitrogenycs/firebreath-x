@@ -22,24 +22,32 @@ public:
 
     FBXSimpleTestPluginCSharpPtr getPlugin();
 
-    // Read/Write property ${PROPERTY.ident}
-    std::string get_testString();
-    void set_testString(const std::string& val);
-
     // Read-only property ${PROPERTY.ident}
     std::string get_version();
 
     // Method echo
-    FB::variant echo(const FB::variant& msg);
+    FB::JSAPIPtr loadExtension(const std::wstring& name);
     
-    // Method test-event
-    void testEvent(const FB::variant& s);
-
 private:
     FBXSimpleTestPluginCSharpWeakPtr m_plugin;
     FB::BrowserHostPtr m_host;
+};
 
-    std::string m_testString;
+
+class FBXContext/* : FB::JSAPIAuto*/
+{
+public:
+    FBXContext(const FB::BrowserHostPtr& host);
+    virtual
+    ~FBXContext();
+
+    FB::JSAPIPtr get_document() const;
+    FB::JSAPIPtr get_window() const;
+    FB::JSAPIPtr get_element() const;
+    FB::JSAPIPtr eval(const std::wstring& script);
+
+protected:
+    FB::BrowserHostPtr m_host;
 };
 
 #endif // H_FBXSimpleTestPluginCSharpAPI

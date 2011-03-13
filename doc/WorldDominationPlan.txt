@@ -10,8 +10,9 @@ Overview
 1) Browser loads plugin.dll
 2) plugin.dll is comprised of c# swig wrapper and fb plugin
 3) plugin.dll starts a .net/mono host like mentioned here 
-http://msdn.microsoft.com/en-us/magazine/cc163567.aspx
-http://www.mono-project.com/Embedding_Mono
+.NET 2 - 3.5: http://msdn.microsoft.com/en-us/magazine/cc163567.aspx
+.NET 4: http://blogs.msdn.com/b/msdnforum/archive/2010/07/09/use-clr4-hosting-api-to-invoke-net-assembly-from-native-c.aspx
+Mono: http://www.mono-project.com/Embedding_Mono
 
 4) Host loads c# .dll and invokes entry point
 5) Entry point returns C++ pointer to JSAPI object

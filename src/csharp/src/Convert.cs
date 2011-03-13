@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Reflection;
 
 namespace FireBreath
 {
@@ -39,7 +40,9 @@ namespace FireBreath
                     // return Empty;
                     return null;
                 case "jsapi":
-                    return value.get_uint64();
+                    return value.get_object();
+                case "fbxjsapi":
+                    return value.get_derived_object();
                 default:
                     // throw bad cast exception here?
                     return null;
@@ -85,5 +88,23 @@ namespace FireBreath
             }
             return true;
         }
-    }   
+    }
+
+
+    public class MethodCall
+    {
+        object obj;
+        MethodInfo info;
+
+        public MethodCall(object Obj, MethodInfo Info)
+        {
+            obj = Obj;
+            info = Info;
+        }
+
+        public Object call(object[] parameters)
+        {
+            return info.Invoke(obj, parameters);
+        }
+    }
 }

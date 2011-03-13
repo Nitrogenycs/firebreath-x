@@ -48,6 +48,9 @@
     <Compile Include="..\..\generated\FireBreathPINVOKE.cs">
       <Link>wrapper\FireBreathPINVOKE.cs</Link>
     </Compile>
+    <Compile Include="..\..\generated\JSAPI.cs">
+      <Link>wrapper\JSAPI.cs</Link>
+    </Compile>
     <Compile Include="..\..\generated\SecurityLevel.cs">
       <Link>wrapper\SecurityLevel.cs</Link>
     </Compile>

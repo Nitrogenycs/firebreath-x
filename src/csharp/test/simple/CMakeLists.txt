@@ -18,11 +18,12 @@ file (GLOB GENERAL RELATIVE ${CMAKE_CURRENT_SOURCE_DIR}
 
 file (GLOB WRAPPER RELATIVE ${CMAKE_CURRENT_SOURCE_DIR}
     ../../../fbx/[^.]*.cpp
+    ../../../fbx/[^.]*.h
     ../../generated/[^.]*.cpp
     ../../generated/[^.]*.h
     )
     
-include_directories(${PLUGIN_INCLUDE_DIRS} ${CMAKE_CURRENT_SOURCE_DIR}/../../../fbx)
+include_directories(${PLUGIN_INCLUDE_DIRS} ${CMAKE_CURRENT_SOURCE_DIR}/../../../fbx )
 
 # Generated files are stored in ${GENERATED} by the project configuration
 SET_SOURCE_FILES_PROPERTIES(

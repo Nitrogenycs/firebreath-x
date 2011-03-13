@@ -27,6 +27,9 @@ set (SOURCES
 
 add_windows_plugin(${PROJECT_NAME} SOURCES)
 
+get_filename_component(PLATFORMSDK_DIR "[HKEY_LOCAL_MACHINE\\SOFTWARE\\Microsoft\\Microsoft SDKs\\Windows\\v7.0A;InstallationFolder]" REALPATH CACHE)  
+include_directories( ${PLATFORMSDK_DIR}/include )
+
 # This is an example of how to add a build step to sign the plugin DLL before
 # the WiX installer builds.  The first filename (certificate.pfx) should be
 # the path to your pfx file.  If it requires a passphrase, the passphrase
@@ -47,6 +50,7 @@ add_windows_plugin(${PROJECT_NAME} SOURCES)
 # add library dependencies here; leave ${PLUGIN_INTERNAL_DEPS} there unless you know what you're doing!
 target_link_libraries(${PROJECT_NAME}
     ${PLUGIN_INTERNAL_DEPS}
+	${PLATFORMSDK_DIR}/lib/mscoree.lib
     )
 
 set(WIX_HEAT_FLAGS
