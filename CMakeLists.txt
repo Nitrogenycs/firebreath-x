@@ -22,7 +22,8 @@ find_package(PythonInterp)
 
 set (SWIG_EXE "swig.exe" CACHE FILE "Swig executable.")
 
+   
+add_subdirectory(third_party)
 
 add_subdirectory(src/python)
 
-add_subdirectory(third_party)

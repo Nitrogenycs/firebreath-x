@@ -39,4 +39,4 @@ SET( SOURCES
 # This will include Win/projectDef.cmake, Linux/projectDef.cmake, etc
 include_platform()
 
-target_link_libraries(${PLUGIN_NAME} fb_py "python.lib")
+target_link_libraries(${PLUGIN_NAME} fbxlib)
