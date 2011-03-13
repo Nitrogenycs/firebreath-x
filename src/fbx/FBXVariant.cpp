@@ -81,6 +81,9 @@ void fbxvariant::set(const FB::variant& Var)
     type_entry(FB::FBVoid(), empty)
     type_entry(FB::FBNull(), null)
     type_entry(FB::JSAPIPtr, jsapi)
+
+    if ( type == "jsapi" && (get_derived_object() != 0) )
+        type = "fbxjsapi";
 }
 
 std::string fbxvariant::get_type() const {

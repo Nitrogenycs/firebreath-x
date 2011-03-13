@@ -21,13 +21,13 @@ namespace TestApp
     {
         System.Type MyClass = typeof(MyClass);
 
-        public void run(JSAPI context)
+        public void run()
         {
             //context.document.title = "Hello, this is the browser/js window";
-            string title = context.eval("document.title");
+            string title = TestApp.context.eval("document.title");
             MessageBox.Show(title, "document.title is...");
 
-            context.eval(@"
+            TestApp.context.eval(@"
                 var obj = new MyClass();
                 alert( obj.data );
                 obj.ShowMessage('Hello from JS');
@@ -35,13 +35,16 @@ namespace TestApp
         }
     }
 
-    public static class MyExtension
+    public static class TestApp
     {
-        public static JSAPI createJSAPI()
+        public static Globals globals = new Globals();
+        public static ObjectJSAPI rootApi = new ObjectJSAPI(globals);
+        public static FBXContext context;
+
+        public static JSAPI createJSAPI(FBXContext Context)
         {
-            Globals globals = new Globals();
-            JSAPI api = new JSAPI(globals);
-            return api;
+            context = Context;
+            return rootApi;
         }
     }
 
