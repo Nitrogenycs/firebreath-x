@@ -32,7 +32,7 @@ class PyJSAPI(FBXJSAPI):
         return True
 
     def HasMethod(self, methodName):
-        return false;
+        return False;
 
     def Invoke(self, methodName, args, result):
         return True

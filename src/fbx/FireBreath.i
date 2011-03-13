@@ -73,5 +73,5 @@ public:
 
     virtual bool Invoke(const std::string& methodName, const std::vector<fbxvariant>& args, fbxvariant& resultValue) = 0;
 
-    virtual fbxvariant Eval(const std::wstring& script);
+    virtual fbxvariant Eval(const std::wstring& script) = 0;
 };

@@ -22,13 +22,18 @@
             }
         }
         
+		function test()
+		{
+			return plugin0().getHelloPyExtension();
+		}
+		
         function load()
         {
             addEvent(plugin(), 'fired', function(x){
                 alert('onfired() from load(): '+x)
             });
 			
-			plugin0().hello_py();
+			test()
         }
 
         function pluginLoaded() {

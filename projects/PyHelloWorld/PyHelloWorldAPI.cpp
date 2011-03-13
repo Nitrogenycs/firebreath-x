@@ -191,54 +191,90 @@ FB::variant PyHelloWorldAPI::hello_py_extension() {
         return FB::variant(hello_py_ext_instance);
     }
 
-    PyObject* src = Py_CompileString("from fbx.example.hello_world import HelloWorldExtension \n"\
-                                     "ext = HelloWorldExtension.createJSAPI()\n"\
-                                     "result = ext.this.__long__()\n"\
-                                     "result = 99999999999999999999999999999", 
-                                     "hello_world_extension.py", Py_single_input);
+    FB::variant result;
 
-    if(PyErr_Occurred()) {
-        return FB::variant(__get_python_error());
+    PyObject *pName; 
+    PyObject *pModule;
+    PyObject *pExtClass;
+    PyObject *pCreateJSAPI;
+    PyObject *pArgs;
+    PyObject *pJsApi;
+    PyObject *pSwigObj;
+    PyObject *pSwigObjPtrFunc;
+    PyObject *pSwigObjPtr;
+
+    pName = PyString_FromString("fbx.example.hello_world");
+    pModule = PyImport_Import(pName);
+    Py_DECREF(pName);
+
+    if (pModule == NULL) {
+        result = FB::variant("Could not load module 'fbx.example.hello_world'.");
+        goto return_result;
     }
 
-    std::string result_str;
+    pExtClass = PyObject_GetAttrString(pModule, "HelloWorldExtension");
 
-    JSAPI* jsapi;
-
-    if (src != 0)                         /* compiled just fine - */
-    {
-        PyObject* locals = PyDict_New ();
-
-        PyEval_EvalCode((PyCodeObject *)src, globals, locals);
-
-        if(PyErr_Occurred()) {
-            return FB::variant(__get_python_error());
-        }
-
-        PyObject* py_result;
-        PyObject* res_key = PyString_FromString("result");
-        py_result = PyDict_GetItem(locals, res_key);
-
-        long ptr = PyLong_AsLong(py_result);
-
-        if(1) return FB::variant(ptr);
-
-        jsapi = reinterpret_cast<JSAPI*>(ptr);
-
-        // crashes... don't know why this is not legal
-        //Py_XDECREF(locals);
-
-    } else  {
-        result_str = "Compilation of python src failed.";
-
-        return FB::variant(result_str);
+    if (pExtClass == NULL) {
+        result = FB::variant("Could not access 'HelloWorldExtension'.");
+        goto return_result;
     }
+
+    pCreateJSAPI = PyObject_GetAttrString(pExtClass, "createJSAPI");
+
+    if (pCreateJSAPI == NULL) {
+        result = FB::variant("Could not access 'HelloWorldExtension.createJSAPI()'.");
+        goto return_result;
+    }
+
+    pArgs = PyTuple_New(0);
+    pJsApi = PyObject_CallObject(pCreateJSAPI, pArgs);
+    Py_DECREF(pArgs);
+
+    if (pJsApi == NULL) {
+        result = FB::variant("'HelloWorldExtension.createJSAPI() failed'.");
+        goto return_result;
+    }
+
+    pSwigObj = PyObject_GetAttrString(pJsApi, "this");
+
+    if (pSwigObj == NULL) {
+        result = FB::variant("Could not access SwigObject.");
+        goto return_result;
+    }
+
+    pSwigObjPtrFunc = PyObject_GetAttrString(pSwigObj, "__long__");
+
+    if (pSwigObjPtrFunc == NULL) {
+        result = FB::variant("no method '__long__()'");
+        goto return_result;
+    }
+
+    pArgs = PyTuple_New(0);
+    pSwigObjPtr = PyObject_CallObject(pSwigObjPtrFunc, pArgs);
+    Py_DECREF(pArgs);
+
+    if (pSwigObjPtr == NULL) {
+        result = FB::variant("could not call method '__long__()'");
+        goto return_result;
+    }
+
+    long ptr = PyLong_AsLong(pSwigObjPtr);
+
+    JSAPI* jsapi = reinterpret_cast<JSAPI*>(ptr);
 
     // shall take ownership? simpler to leave it in py
     //  and use no_delete
     hello_py_ext_instance = FB::JSAPIPtr(jsapi, __JSAPI_no_delete);
 
-    FB::variant result(hello_py_ext_instance);
+    result = FB::variant(hello_py_ext_instance);
+
+return_result:
+    Py_XDECREF(pSwigObjPtr);
+    Py_XDECREF(pSwigObjPtrFunc);
+    Py_XDECREF(pSwigObj);
+    Py_XDECREF(pCreateJSAPI);
+    Py_XDECREF(pExtClass);
+    Py_XDECREF(pModule);
 
     return result;
 
