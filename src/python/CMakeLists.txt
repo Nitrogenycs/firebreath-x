@@ -13,8 +13,11 @@ add_custom_command(
 	OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/fbx/${FBPY_MODULE_NAME}.py 
 		   ${CMAKE_CURRENT_BINARY_DIR}/fbx/${FBPY_MODULE_NAME}_py_wrap.cpp 
 		   ${CMAKE_CURRENT_BINARY_DIR}/fbx/${FBPY_MODULE_NAME}_py_wrap.h
-	COMMAND ${SWIG_EXE} -c++ -python -outdir ${CMAKE_CURRENT_BINARY_DIR} -o ${CMAKE_CURRENT_BINARY_DIR}/fbx/${FBPY_MODULE_NAME}_py_wrap.cpp ${CMAKE_CURRENT_SOURCE_DIR}/../fbx/FireBreath.i
-	DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/../fbx/FireBreath.i ${CMAKE_CURRENT_SOURCE_DIR}/../fbx/FBXAPI.h ${CMAKE_CURRENT_SOURCE_DIR}/../fbx/FBXVariant.h
+	COMMAND ${SWIG_EXE} -c++ -python 
+						-outdir ${CMAKE_CURRENT_BINARY_DIR}/fbx 
+						-o ${CMAKE_CURRENT_BINARY_DIR}/fbx/${FBPY_MODULE_NAME}_py_wrap.cpp 
+						${CMAKE_CURRENT_SOURCE_DIR}/../fbx/FireBreath.i
+#	DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/../fbx/FireBreath.i ${CMAKE_CURRENT_SOURCE_DIR}/../fbx/FBXAPI.h ${CMAKE_CURRENT_SOURCE_DIR}/../fbx/FBXVariant.h
 	COMMENT "Generating python wrapper for firebreath"
 	VERBATIM
 )
