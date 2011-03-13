@@ -5,3 +5,5 @@
 /src/csharp/makefiles/SimpleTest/bin
 /third_party/swigwin-2.0.2
 /build*
+
+/cmake.conf
