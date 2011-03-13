@@ -1,0 +1,5 @@
+//Path to python
+set(PYTHON_ROOT "d:/Python26" CACHE PATH "set this if problems with atuomatic pyhton lib find")
+
+//Swig executable.
+set(SWIG_EXE "d:\libraries\swigwin-2.0.0\swig.exe" CACHE FILE "path to swig executable")
