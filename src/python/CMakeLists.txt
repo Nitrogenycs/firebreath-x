@@ -69,14 +69,23 @@ link_directories(${PYTHON_LIBRARIES})
 add_library(fbx_py MODULE ${CMAKE_CURRENT_BINARY_DIR}/fbx/${FBPY_MODULE_NAME}_py_wrap.cpp)
 target_link_libraries(fbx_py fbxlib ScriptingCore)
 
-get_property(fbx_py_location TARGET fbx_py PROPERTY LOCATION)
+set_target_properties(fbx_py	
+	PROPERTIES 	OUTPUT_NAME "_FireBreath"
+				SUFFIX ".pyd"
+				DEBUG_POSTFIX "_d"
+)				
 
-add_custom_command(
-    TARGET fbx_py
-    POST_BUILD
-    COMMAND ${CMAKE_COMMAND} -E copy ${fbx_py_location} ${CMAKE_CURRENT_BINARY_DIR}/fbx/_FireBreath.pyd
+
+# TODO: how to copy only one file per configuration ?
+get_property(fbx_py_location_release TARGET fbx_py PROPERTY LOCATION_Release)
+get_property(fbx_py_location_debug TARGET fbx_py PROPERTY LOCATION_Debug)
+
+add_custom_target(install_fbx
+    COMMAND ${CMAKE_COMMAND} -E copy ${fbx_py_location_debug} ${CMAKE_CURRENT_BINARY_DIR}/fbx
+    COMMAND ${CMAKE_COMMAND} -E copy ${fbx_py_location_release} ${CMAKE_CURRENT_BINARY_DIR}/fbx
     COMMAND ${CMAKE_COMMAND} -E copy ${CMAKE_CURRENT_SOURCE_DIR}/setup.py ${CMAKE_CURRENT_BINARY_DIR}
     COMMAND ${CMAKE_COMMAND} -E copy_directory ${CMAKE_CURRENT_SOURCE_DIR}/fbx ${CMAKE_CURRENT_BINARY_DIR}/fbx
     COMMAND ${CMAKE_COMMAND} -E copy_directory ${CMAKE_CURRENT_SOURCE_DIR}/fbx/example ${CMAKE_CURRENT_BINARY_DIR}/fbx/example
 	COMMAND ${PYTHON_EXECUTABLE} ${CMAKE_CURRENT_BINARY_DIR}/setup.py install
+	COMMENT "Intalling firebreath.py to python site-packages"
 )

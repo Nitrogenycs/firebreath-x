@@ -12,5 +12,5 @@ setup (name = 'fbx',
        description = """Python wrapper for firebreath""",
 		package_dir={'fbx': 'fbx', 'fbx.example':'fbx/example'},
 		packages=['fbx', 'fbx.example'],		
-		data_files=[('Lib/site-packages/fbx', ['fbx/_FireBreath.pyd'])],
+		data_files=[('Lib/site-packages/fbx', ['fbx/_FireBreath.pyd', 'fbx/_FireBreath_d.pyd'])],
        )

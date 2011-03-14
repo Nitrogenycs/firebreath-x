@@ -26,18 +26,20 @@
 		{
 			return plugin0().getHelloPyExtension();
 		}
-		
+				
         function load()
         {
             addEvent(plugin(), 'fired', function(x){
                 alert('onfired() from load(): '+x)
             });
 			
-			test()
         }
+		
+		var ext;
 
         function pluginLoaded() {
             alert("Plugin loaded!");
+			ext = test();
         }
         
         function addTestEvent()

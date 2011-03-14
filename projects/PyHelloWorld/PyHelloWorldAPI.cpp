@@ -193,15 +193,16 @@ FB::variant PyHelloWorldAPI::hello_py_extension() {
 
     FB::variant result;
 
-    PyObject *pName; 
-    PyObject *pModule;
-    PyObject *pExtClass;
-    PyObject *pCreateJSAPI;
-    PyObject *pArgs;
-    PyObject *pJsApi;
-    PyObject *pSwigObj;
-    PyObject *pSwigObjPtrFunc;
-    PyObject *pSwigObjPtr;
+    PyObject *pName = 0; 
+    PyObject *pModule = 0;
+    PyObject *pExtClass = 0;
+    PyObject *pCreateJSAPI = 0;
+    PyObject *pArgs = 0;
+    PyObject *pJsApi = 0;
+    PyObject *pSwigObj = 0;
+    PyObject *pSwigObjLongFunc = 0;
+    PyObject *pSwigObjDisOwnFunc = 0;
+    PyObject *pSwigObjPtr = 0;
 
     pName = PyString_FromString("fbx.example.hello_world");
     pModule = PyImport_Import(pName);
@@ -226,6 +227,9 @@ FB::variant PyHelloWorldAPI::hello_py_extension() {
         goto return_result;
     }
 
+    // ATTENTION: i believe somewhere here is some problem with ownership
+    //       causing a crash in NPJavascriptObject
+    //       (at end of Enumerate
     pArgs = PyTuple_New(0);
     pJsApi = PyObject_CallObject(pCreateJSAPI, pArgs);
     Py_DECREF(pArgs);
@@ -242,15 +246,17 @@ FB::variant PyHelloWorldAPI::hello_py_extension() {
         goto return_result;
     }
 
-    pSwigObjPtrFunc = PyObject_GetAttrString(pSwigObj, "__long__");
+    pSwigObjLongFunc = PyObject_GetAttrString(pSwigObj, "__long__");
+    pSwigObjDisOwnFunc = PyObject_GetAttrString(pSwigObj, "disown");
 
-    if (pSwigObjPtrFunc == NULL) {
+    if (pSwigObjLongFunc == NULL) {
         result = FB::variant("no method '__long__()'");
         goto return_result;
     }
 
     pArgs = PyTuple_New(0);
-    pSwigObjPtr = PyObject_CallObject(pSwigObjPtrFunc, pArgs);
+    pSwigObjPtr = PyObject_CallObject(pSwigObjLongFunc, pArgs);
+    PyObject_CallObject(pSwigObjDisOwnFunc, pArgs);
     Py_DECREF(pArgs);
 
     if (pSwigObjPtr == NULL) {
@@ -262,19 +268,19 @@ FB::variant PyHelloWorldAPI::hello_py_extension() {
 
     JSAPI* jsapi = reinterpret_cast<JSAPI*>(ptr);
 
-    // shall take ownership? simpler to leave it in py
-    //  and use no_delete
-    hello_py_ext_instance = FB::JSAPIPtr(jsapi, __JSAPI_no_delete);
+    // shall drag take ownership from? 
+    hello_py_ext_instance = FB::JSAPIPtr(jsapi);
 
     result = FB::variant(hello_py_ext_instance);
 
 return_result:
-    Py_XDECREF(pSwigObjPtr);
-    Py_XDECREF(pSwigObjPtrFunc);
-    Py_XDECREF(pSwigObj);
-    Py_XDECREF(pCreateJSAPI);
-    Py_XDECREF(pExtClass);
-    Py_XDECREF(pModule);
+// HACK: just to try if error with memory is induced by premature destruction
+    //Py_XDECREF(pSwigObjPtr);
+    //Py_XDECREF(pSwigObjPtrFunc);
+    //Py_XDECREF(pSwigObj);
+    //Py_XDECREF(pCreateJSAPI);
+    //Py_XDECREF(pExtClass);
+    //Py_XDECREF(pModule);
 
     return result;
 
