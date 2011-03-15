@@ -23,12 +23,6 @@ class PyJSAPI(FBXJSAPI):
         self.method_map = {'constructor': '__init__', 'length': '__len__'}
 
     def getMemberNames(self, arg=None):
-        
-        if(True):
-            res = StringVector()
-            res.push_back('hello_py')
-            return res
-        
         if arg == None:
             return self.member_names
         else:
@@ -36,9 +30,10 @@ class PyJSAPI(FBXJSAPI):
                 arg.push_back(m)
             return True 
 
+    def getMemberName(self, idx):
+        return self.member_names[idx]
+
     def getMemberCount(self):
-        if(True):
-            return 0
         return self.member_names.size()
         
     def HasProperty(self, arg):
@@ -53,7 +48,6 @@ class PyJSAPI(FBXJSAPI):
         return False
 
     def GetProperty0(self, propertyName, value):
-
         prop = getattr(self.wrappedObj, propertyName)
         try:
             value.set(prop)
@@ -62,7 +56,6 @@ class PyJSAPI(FBXJSAPI):
         return True
 
     def GetProperty(self, arg, value):
-    
         if isinstance(arg, str):
             return self.GetProperty0(arg, value)
         elif isinstance(arg, int):
@@ -71,7 +64,6 @@ class PyJSAPI(FBXJSAPI):
         return False
         
     def SetProperty0(self, propertyName, value):
-
         try:
             new_val = ConvertToPy(value)
             setattr(self.wrappedObj, propertyName, new_val)
@@ -81,7 +73,6 @@ class PyJSAPI(FBXJSAPI):
         return True
 
     def SetProperty(self, arg, value):
-        
         if isinstance(arg, str):
             return self.SetProperty0(arg, value)
         elif isinstance(arg, int):
@@ -91,9 +82,8 @@ class PyJSAPI(FBXJSAPI):
 
 
     def HasMethod(self, methodName):
-    
-        if(True):
-            return False
+#        if(True):
+#            return False
     
         # TODO: there are some methods that must be mapped to python naming
         # "compilation_unit_type"

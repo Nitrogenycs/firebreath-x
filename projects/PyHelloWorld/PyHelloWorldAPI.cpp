@@ -229,10 +229,23 @@ FB::variant PyHelloWorldAPI::hello_py_extension() {
 
     // ATTENTION: i believe somewhere here is some problem with ownership
     //       causing a crash in NPJavascriptObject
-    //       (at end of Enumerate
+    //       (at end of Enumerate)
+    // what i've tried - but didn't help:
+    //  - drag ownership from python proxy 
+    //          for the case that proxy destroys a PyObj that py wants to ref-kill too
+    //  - not to decrease any of the python refs
+    //          for the case that proxy tries to destroy an already destructed ref-counted pyobj
+    //  - use a getMemberName(idx) instead of getMemberNames()
+    //          for the case that std::vector-wrapper causes problems
+    //  - copy returned strings
+    //          for the case of some char* deletion  problem
+    //
     pArgs = PyTuple_New(0);
     pJsApi = PyObject_CallObject(pCreateJSAPI, pArgs);
     Py_DECREF(pArgs);
+
+    // maybe error is due to refcounted derstuction of pJsApi?
+    Py_INCREF(pJsApi);
 
     if (pJsApi == NULL) {
         result = FB::variant("'HelloWorldExtension.createJSAPI() failed'.");
@@ -256,7 +269,7 @@ FB::variant PyHelloWorldAPI::hello_py_extension() {
 
     pArgs = PyTuple_New(0);
     pSwigObjPtr = PyObject_CallObject(pSwigObjLongFunc, pArgs);
-    PyObject_CallObject(pSwigObjDisOwnFunc, pArgs);
+//    PyObject_CallObject(pSwigObjDisOwnFunc, pArgs);
     Py_DECREF(pArgs);
 
     if (pSwigObjPtr == NULL) {
@@ -268,19 +281,18 @@ FB::variant PyHelloWorldAPI::hello_py_extension() {
 
     JSAPI* jsapi = reinterpret_cast<JSAPI*>(ptr);
 
-    // shall drag take ownership from? 
-    hello_py_ext_instance = FB::JSAPIPtr(jsapi);
+    hello_py_ext_instance = FB::JSAPIPtr(jsapi, __JSAPI_no_delete);
 
     result = FB::variant(hello_py_ext_instance);
 
 return_result:
-// HACK: just to try if error with memory is induced by premature destruction
-    //Py_XDECREF(pSwigObjPtr);
-    //Py_XDECREF(pSwigObjPtrFunc);
-    //Py_XDECREF(pSwigObj);
-    //Py_XDECREF(pCreateJSAPI);
-    //Py_XDECREF(pExtClass);
-    //Py_XDECREF(pModule);
+    Py_XDECREF(pSwigObjPtr);
+    Py_XDECREF(pSwigObjDisOwnFunc);
+    Py_XDECREF(pSwigObjLongFunc);
+    Py_XDECREF(pSwigObj);
+    Py_XDECREF(pCreateJSAPI);
+    Py_XDECREF(pExtClass);
+    Py_XDECREF(pModule);
 
     return result;
 
