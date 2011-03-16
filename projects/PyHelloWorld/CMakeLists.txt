@@ -1,6 +1,6 @@
 #/**********************************************************\ 
 # 
-# Auto-generated CMakeLists.txt for the MyPlugin project
+# Auto-generated CMakeLists.txt for the PyHelloWorld project
 #
 #\**********************************************************/
 
