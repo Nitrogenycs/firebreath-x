@@ -6,7 +6,7 @@ class PyHelloWorld:
 		pass
 		
 	def hello_py(self, msg):
-		return msg
+		return "js? is it you? omg , this is awesome :)"
 
 class HelloWorldExtension:
 	

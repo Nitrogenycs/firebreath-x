@@ -1,0 +1,11 @@
+diff --git "a/D:\\project\\firebreath-x\\build_win32_vc9\\third_party\\FireBreath\\projects\\PyHelloWorld\\gen\\FireBreathWin.orig.def" "b/D:\\project\\firebreath-x\\build_win32_vc9\\third_party\\FireBreath\\projects\\PyHelloWorld\\gen\\FireBreathWin.def"
+index 2d67797..de951c1 100644
+--- "a/D:\\project\\firebreath-x\\build_win32_vc9\\third_party\\FireBreath\\projects\\PyHelloWorld\\gen\\FireBreathWin.orig.def"
++++ "b/D:\\project\\firebreath-x\\build_win32_vc9\\third_party\\FireBreath\\projects\\PyHelloWorld\\gen\\FireBreathWin.def"
+@@ -15,3 +15,6 @@ EXPORTS
+ 	NP_GetEntryPoints   @1
+ 	NP_Initialize       @2
+ 	NP_Shutdown         @3
++
++; Needed for Python
++    init_FireBreath     @4

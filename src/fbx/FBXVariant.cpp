@@ -47,8 +47,11 @@ bool fbxvariant::is_null() {
     return var.is_null();
 }
 
+void fbxvariant_JSAPI_no_delete(FB::JSAPI* ptr) {}
+
 void fbxvariant::set(FB::JSAPI* value) {
-    var = FB::JSAPIPtr(value);
+    // we should not take ownership here
+    var = FB::JSAPIPtr(value, fbxvariant_JSAPI_no_delete);
     type = "jsapi";
 }
 FB::JSAPI* fbxvariant::get_object () {

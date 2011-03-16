@@ -244,7 +244,7 @@ FB::variant PyHelloWorldAPI::hello_py_extension() {
     pJsApi = PyObject_CallObject(pCreateJSAPI, pArgs);
     Py_DECREF(pArgs);
 
-    // maybe error is due to refcounted derstuction of pJsApi?
+    // maybe error is due to refcounted destruction of pJsApi?
     Py_INCREF(pJsApi);
 
     if (pJsApi == NULL) {
@@ -281,6 +281,7 @@ FB::variant PyHelloWorldAPI::hello_py_extension() {
 
     JSAPI* jsapi = reinterpret_cast<JSAPI*>(ptr);
 
+    // attention: currently it is important not to take own
     hello_py_ext_instance = FB::JSAPIPtr(jsapi, __JSAPI_no_delete);
 
     result = FB::variant(hello_py_ext_instance);
@@ -298,3 +299,27 @@ return_result:
 
 }
 
+#ifndef SWIGEXPORT
+# if defined(_WIN32) || defined(__WIN32__) || defined(__CYGWIN__)
+#   if defined(STATIC_LINKED)
+#     define SWIGEXPORT
+#   else
+#     define SWIGEXPORT __declspec(dllexport)
+#   endif
+# else
+#   if defined(__GNUC__) && defined(GCC_HASCLASSVISIBILITY)
+#     define SWIGEXPORT __attribute__ ((visibility("default")))
+#   else
+#     define SWIGEXPORT
+#   endif
+# endif
+#endif
+
+extern
+SWIGEXPORT 
+#if PY_VERSION_HEX >= 0x03000000
+PyObject*
+#else
+void
+#endif
+init_FireBreath(void);
