@@ -10,17 +10,13 @@ Preparation
  - For command line cmake:  copy cmake.conf.stub to cmake.conf and edit settings
    CMake GUI provides file dialog based editors
    
- - Create a Firebreath project (see FireBreath documentation)
- 
- - Move project folder 'projects'
-
 
 Python plugin
 -------------
+
+ - Create a Firebreath project (see FireBreath documentation)
  
- - Add following line to 'projects/<plugin-name>/CmakeLists.txt':
-		
-		target_link_libraries(${PLUGIN_NAME} fb_py)
+ - Move project into folder 'projects' (firebreath-x root dir)
 
  - Create a folder for build (out-of-source build), e.g., 'build_win32_vc9'
  
@@ -32,11 +28,13 @@ Python plugin
  
 		cmake -C ../cmake.conf ..
 		
-	This will create build projects for the default project generator determined by cmake. You can control this using '-G <generator>' (see cmake --help).
+	This will create projects for the default project generator determined by cmake. You can control this using '-G <generator>' (see cmake --help).
 	
+	Note: you need 'svn' and 'patch' (e.g. from msys under Windows) on the path
+
  - Open firebreath-x project file (e.g. 'build_win32_vc9/firebreath-x.sln').
  
- NOTE: Firebreath is also driven by cmake. This means that project configuration files are generated. 
+ NOTE: Firebreath-x build is driven by cmake. This means that project configuration files are generated. 
 	   If you change project settings, e.g., setting pre-processor definitions or adding source files, from within your IDE (e.g. Visual Studio)
 	   they will be lost after next clean cmake run.
 	   Instead, you have to change 'projects/<project-name>/CMakeLists.txt'

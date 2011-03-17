@@ -1,0 +1,21 @@
+--- "a/FireBreath_orig.py"
++++ "b/FireBreath.py"
+@@ -10,6 +10,18 @@ if version_info >= (2,6,0):
+     def swig_import_helper():
+         from os.path import dirname
+         import imp
++        
++        #########################################
++        # NOTE: monkey patched by firebreath-x
++        #       This is necessary, as all of a firebreath-py plugin must be contained in the plugin's (shared) library
++        #       Therefore, the init_FireBreath method is loaded from the plugin.
++        try:
++            _mod = imp.load_dynamic('_FireBreath', '${PLUGIN_LIBRARY}')
++            return _mod
++        except:
++            pass
++        #########################################
++        
+         fp = None
+         try:
+             fp, pathname, description = imp.find_module('_FireBreath', [dirname(__file__)])

@@ -7,10 +7,46 @@
 #include "JSObject.h"
 #include "variant_list.h"
 #include "DOM/Document.h"
-
+#include "APITypes.h"
 #include "PyHelloWorldAPI.h"
 
 #include <Python.h>
+
+void __JSAPI_no_delete(FB::JSAPI* ptr) {}
+
+std::string __convert_py_to_string(PyObject* py_str) {
+    Py_ssize_t str_len = PyString_Size(py_str);
+
+    char* c_str = new char[str_len+1];
+    memset(c_str, 0, str_len+1);
+    strcpy_s(c_str, str_len+1, PyString_AsString(py_str));
+    std::string result_str(c_str);
+
+    return result_str;
+}
+
+std::string __get_python_error() {
+        PyObject *type = 0;
+        PyObject *value = 0;
+        PyObject *traceback = 0;
+        PyErr_Fetch(&type, &value, &traceback);
+
+        if (value) {
+            char *tmp;
+            PyObject *str_obj = PyObject_Str(value);
+            Py_XINCREF(type);
+            PyErr_Clear();
+            PyObject* msg = PyErr_Format(type, "%s", tmp = PyString_AsString(str_obj));
+            std::string result_str = __convert_py_to_string(msg);
+            Py_DECREF(msg);
+            Py_DECREF(str_obj);
+
+            return result_str;
+
+        } else {
+            return "Unknown error";
+        }
+}
 
 ///////////////////////////////////////////////////////////////////////////////
 /// @fn PyHelloWorldAPI::PyHelloWorldAPI(const PyHelloWorldPtr& plugin, const FB::BrowserHostPtr host)
@@ -47,6 +83,8 @@ PyHelloWorldAPI::PyHelloWorldAPI(const PyHelloWorldPtr& plugin, const FB::Browse
     registerEvent("onfired");    
 
     registerMethod("hello_py", make_method(this, &PyHelloWorldAPI::hello_py));
+
+    registerMethod("getHelloPyExtension", make_method(this, &PyHelloWorldAPI::hello_py_extension));
 
 //    registerMethod("eval", make_method(this, &PyHelloWorldAPI::eval));
 }
@@ -129,12 +167,8 @@ FB::variant PyHelloWorldAPI::hello_py()
         py_result = PyDict_GetItem(locals, res_key);
 
         PyObject* py_str = PyObject_Str(py_result);
-        Py_ssize_t str_len = PyString_Size(py_str);
 
-        char* c_str = new char[str_len+1];
-        memset(c_str, 0, str_len+1);
-        strcpy_s(c_str, str_len+1, PyString_AsString(py_str));
-        result_str = std::string(c_str);
+        result_str = __convert_py_to_string(py_str);
 
         Py_XDECREF(py_str);
         Py_XDECREF(py_eval);
@@ -151,3 +185,113 @@ FB::variant PyHelloWorldAPI::hello_py()
     return result;
 }
 
+FB::variant PyHelloWorldAPI::hello_py_extension() {
+
+    if ( hello_py_ext_instance.get() != 0) {
+        return FB::variant(hello_py_ext_instance);
+    }
+
+    FB::variant result;
+
+    PyObject *pName = 0; 
+    PyObject *pModule = 0;
+    PyObject *pExtClass = 0;
+    PyObject *pCreateJSAPI = 0;
+    PyObject *pArgs = 0;
+    PyObject *pJsApi = 0;
+    PyObject *pSwigObj = 0;
+    PyObject *pSwigObjLongFunc = 0;
+    PyObject *pSwigObjDisOwnFunc = 0;
+    PyObject *pSwigObjPtr = 0;
+
+    pName = PyString_FromString("fbx.example.hello_world");
+    pModule = PyImport_Import(pName);
+    Py_DECREF(pName);
+
+    if (pModule == NULL) {
+        result = FB::variant("Could not load module 'fbx.example.hello_world'.");
+        goto return_result;
+    }
+
+    pExtClass = PyObject_GetAttrString(pModule, "HelloWorldExtension");
+
+    if (pExtClass == NULL) {
+        result = FB::variant("Could not access 'HelloWorldExtension'.");
+        goto return_result;
+    }
+
+    pCreateJSAPI = PyObject_GetAttrString(pExtClass, "createJSAPI");
+
+    if (pCreateJSAPI == NULL) {
+        result = FB::variant("Could not access 'HelloWorldExtension.createJSAPI()'.");
+        goto return_result;
+    }
+
+    // ATTENTION: i believe somewhere here is some problem with ownership
+    //       causing a crash in NPJavascriptObject
+    //       (at end of Enumerate)
+    // what i've tried - but didn't help:
+    //  - drag ownership from python proxy 
+    //          for the case that proxy destroys a PyObj that py wants to ref-kill too
+    //  - not to decrease any of the python refs
+    //          for the case that proxy tries to destroy an already destructed ref-counted pyobj
+    //  - use a getMemberName(idx) instead of getMemberNames()
+    //          for the case that std::vector-wrapper causes problems
+    //  - copy returned strings
+    //          for the case of some char* deletion  problem
+    //
+    pArgs = PyTuple_New(0);
+    pJsApi = PyObject_CallObject(pCreateJSAPI, pArgs);
+    Py_DECREF(pArgs);
+
+    if (pJsApi == NULL) {
+        result = FB::variant("'HelloWorldExtension.createJSAPI() failed'.");
+        goto return_result;
+    }
+
+    pSwigObj = PyObject_GetAttrString(pJsApi, "this");
+
+    if (pSwigObj == NULL) {
+        result = FB::variant("Could not access SwigObject.");
+        goto return_result;
+    }
+
+    pSwigObjLongFunc = PyObject_GetAttrString(pSwigObj, "__long__");
+    pSwigObjDisOwnFunc = PyObject_GetAttrString(pSwigObj, "disown");
+
+    if (pSwigObjLongFunc == NULL) {
+        result = FB::variant("no method '__long__()'");
+        goto return_result;
+    }
+
+    pArgs = PyTuple_New(0);
+    pSwigObjPtr = PyObject_CallObject(pSwigObjLongFunc, pArgs);
+//    PyObject_CallObject(pSwigObjDisOwnFunc, pArgs);
+    Py_DECREF(pArgs);
+
+    if (pSwigObjPtr == NULL) {
+        result = FB::variant("could not call method '__long__()'");
+        goto return_result;
+    }
+
+    long ptr = PyLong_AsLong(pSwigObjPtr);
+
+    JSAPI* jsapi = reinterpret_cast<JSAPI*>(ptr);
+
+    // leave python ownership (won't be decref'd until dll unload...)
+    hello_py_ext_instance = FB::JSAPIPtr(jsapi, __JSAPI_no_delete);
+
+    result = FB::variant(hello_py_ext_instance);
+
+return_result:
+    Py_XDECREF(pSwigObjPtr);
+    Py_XDECREF(pSwigObjDisOwnFunc);
+    Py_XDECREF(pSwigObjLongFunc);
+    Py_XDECREF(pSwigObj);
+    Py_XDECREF(pCreateJSAPI);
+    Py_XDECREF(pExtClass);
+    Py_XDECREF(pModule);
+
+    return result;
+
+}

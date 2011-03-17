@@ -7,6 +7,7 @@
 #include <string>
 #include <sstream>
 #include <boost/weak_ptr.hpp>
+#include "APITypes.h"
 #include "JSAPIAuto.h"
 #include "BrowserHost.h"
 #include "PyHelloWorld.h"
@@ -39,6 +40,8 @@ public:
 
     FB::variant hello_py();
 
+    FB::variant hello_py_extension();
+
     // Method echo
     //FB::variant eval(const FB::variant& py);
 
@@ -49,6 +52,9 @@ private:
     std::string m_testString;
 
     PyObject* globals;
+
+    FB::JSAPIPtr hello_py_ext_instance;
+
 };
 
 #endif // H_PyHelloWorldAPI
