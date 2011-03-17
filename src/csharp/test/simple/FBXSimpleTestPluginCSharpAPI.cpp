@@ -7,8 +7,12 @@
 #include "JSObject.h"
 #include "variant_list.h"
 #include "DOM/Document.h"
+#include "DOM/Window.h"
 
 #include "FBXSimpleTestPluginCSharpAPI.h"
+#include "FBXJSAPI.h"
+#include "FBXJSAPIWrapper.h"
+#include "JSAPIWrapper.h"
 
 #include <metahost.h>
 
@@ -68,7 +72,7 @@ std::string FBXSimpleTestPluginCSharpAPI::get_version()
 
 
 // Method loadExtension, from http://blogs.msdn.com/b/msdnforum/archive/2010/07/09/use-clr4-hosting-api-to-invoke-net-assembly-from-native-c.aspx
-FB::JSAPIPtr FBXSimpleTestPluginCSharpAPI::loadExtension(const std::wstring& name)
+FB::JSAPIPtr FBXSimpleTestPluginCSharpAPI::loadExtension(const std::wstring& name, const std::wstring& entryPoint, const std::wstring& methodName, const std::wstring& arguments)
 {
     // todo: check signature of extension .dll/.so here for security measures!
     // CheckSecurity();
@@ -76,9 +80,7 @@ FB::JSAPIPtr FBXSimpleTestPluginCSharpAPI::loadExtension(const std::wstring& nam
     // Bind to the runtime.
     FB::JSAPIPtr result;
 
-    PCWSTR pszVersion = L"v4.0.30319";
-    PCWSTR pszAssemblyPath = name.c_str();
-    PCWSTR pszClassName = name.c_str();
+    std::wstring version = L"v4.0.30319";
 
     HRESULT hr;
     ICLRMetaHost *pMetaHost = NULL;
@@ -89,9 +91,9 @@ FB::JSAPIPtr FBXSimpleTestPluginCSharpAPI::loadExtension(const std::wstring& nam
     // ICLRRuntimeHost does not support loading the .NET v1.x runtimes.
     ICLRRuntimeHost *pClrRuntimeHost = NULL;
     // The static method in the .NET class to invoke.
-    PCWSTR pszStaticMethodName = L"GetStringLength";
-    PCWSTR pszStringArg = L"HelloWorld";
     DWORD dwLengthRet;
+    FBXJSAPI* context = new FBXJSAPIWrapper(boost::make_shared<FBXContext>(m_host));
+    FBXJSAPI* createdApi(0);
 
     try
     {
@@ -105,7 +107,7 @@ FB::JSAPIPtr FBXSimpleTestPluginCSharpAPI::loadExtension(const std::wstring& nam
 
         // Get the ICLRRuntimeInfo corresponding to a particular CLR version. It 
         // supersedes CorBindToRuntimeEx with STARTUP_LOADER_SAFEMODE.
-        hr = pMetaHost->GetRuntime(pszVersion, IID_PPV_ARGS(&pRuntimeInfo));
+        hr = pMetaHost->GetRuntime(version.c_str(), IID_PPV_ARGS(&pRuntimeInfo));
         if (FAILED(hr))
             throw FB::script_error("ICLRMetaHost::GetRuntime failed. Error code: " + boost::lexical_cast<std::string>(hr));
 
@@ -119,7 +121,7 @@ FB::JSAPIPtr FBXSimpleTestPluginCSharpAPI::loadExtension(const std::wstring& nam
             throw FB::script_error("ICLRRuntimeInfo::IsLoadable failed. Error code: " + boost::lexical_cast<std::string>(hr));
 
         if (!fLoadable)
-            throw FB::script_error(".NET runtime cannot be loaded. Version: " + FB::wstring_to_utf8(pszVersion));
+            throw FB::script_error(".NET runtime cannot be loaded. Version: " + FB::wstring_to_utf8(version));
 
         // Load the CLR into the current process and return a runtime interface 
         // pointer. ICorRuntimeHost and ICLRRuntimeHost are the two CLR hosting  
@@ -136,6 +138,14 @@ FB::JSAPIPtr FBXSimpleTestPluginCSharpAPI::loadExtension(const std::wstring& nam
         hr = pClrRuntimeHost->Start();
         if (FAILED(hr))
             throw FB::script_error("CLR failed to start. Error code: " + boost::lexical_cast<std::string>(hr));
+
+        // construct entry info
+        std::wstring entryInfo;
+        entryInfo += boost::lexical_cast<std::wstring>(&createdApi) + L"|";
+        entryInfo += boost::lexical_cast<std::wstring>(&context) + L"|";
+        entryInfo += arguments;
+
+
         // 
         // Load the NET assembly and call the static method GetStringLength of 
         // the type CSSimpleObject in the assembly.
@@ -148,13 +158,13 @@ FB::JSAPIPtr FBXSimpleTestPluginCSharpAPI::loadExtension(const std::wstring& nam
         // method. If the HRESULT return value of ExecuteInDefaultAppDomain is 
         // set to S_OK, pReturnValue is set to the integer value returned by the 
         // invoked method. Otherwise, pReturnValue is not set.
-        hr = pClrRuntimeHost->ExecuteInDefaultAppDomain(pszAssemblyPath, 
-            pszClassName, pszStaticMethodName, pszStringArg, &dwLengthRet);
+        hr = pClrRuntimeHost->ExecuteInDefaultAppDomain(name.c_str(), 
+            entryPoint.c_str(), methodName.c_str(), entryInfo.c_str(), &dwLengthRet);
         if (FAILED(hr))
             throw FB::script_error("Failed to call GetStringLength. Error code: " + boost::lexical_cast<std::string>(hr));
-
-         // Print the call result of the static method.
-        wprintf(L"Call %s.%s(\"%s\") => %d\n", pszClassName, pszStaticMethodName, pszStringArg, dwLengthRet);
+        
+        if ( createdApi )
+            result = boost::make_shared<JSAPIWrapper>(createdApi);
     }
     catch(...)
     {
@@ -191,7 +201,6 @@ FBXContext::FBXContext(const FB::BrowserHostPtr& host) : m_host(host)
     registerProperty("document", make_property(this, &FBXContext::get_document));
     registerProperty("window", make_property(this, &FBXContext::get_window));
     registerProperty("element", make_property(this, &FBXContext::get_element));
-    registerMethod("eval", make_method(this, &FBXContext::eval));
 }
 
 FBXContext::~FBXContext()
@@ -211,11 +220,4 @@ FB::JSAPIPtr FBXContext::get_window() const
 FB::JSAPIPtr FBXContext::get_element() const
 {
     return m_host->getDOMElement()->getJSObject();
-}
-
-FB::JSAPIPtr FBXContext::eval(const std::wstring& script) const
-{
-    std::vector<FB::variant> arguments;
-    arguments.push_back( script );
-    return get_window()->Invoke(L"eval", arguments);
 }

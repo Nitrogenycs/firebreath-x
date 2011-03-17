@@ -1,5 +1,6 @@
 #include "FBXVariant.h"
-#include "FBXJSAPI.h"
+#include "FBXJSAPIWrapper.h"
+#include "JSAPIWrapper.h"
 
 #define fbxvariant_entry(_type_, name)          \
     void fbxvariant::set(const _type_& value) { \
@@ -12,7 +13,7 @@
 #define type_entry(_type_, name)                \
     if (*varType == typeid(_type_)) {           \
         type = #name;                           \
-    }
+    } else 
 
 fbxvariant_entry(bool, bool)
 fbxvariant_entry(int, int)
@@ -47,15 +48,12 @@ bool fbxvariant::is_null() {
     return var.is_null();
 }
 
-void fbxvariant::set(FB::JSAPI* value) {
-    var = FB::JSAPIPtr(value);
+void fbxvariant::set(FBXJSAPI* value) {
+    var = boost::make_shared<JSAPIWrapper>(value);
     type = "jsapi";
 }
-FB::JSAPI* fbxvariant::get_object () {
-    return var.cast<FB::JSAPIPtr>().get();
-}
-FBXJSAPI* fbxvariant::get_derived_object () {
-    return dynamic_cast<FBXJSAPI*>( get_object() );
+FBXJSAPI* fbxvariant::get_object () {
+    return new FBXJSAPIWrapper( var.cast<FB::JSAPIPtr>() );
 }
 
 void fbxvariant::set(const FB::variant& Var)
@@ -68,7 +66,7 @@ void fbxvariant::set(const FB::variant& Var)
     type_entry(unsigned int, uint)
     type_entry(double, double)
     type_entry(float, float)
-    //type_entry(std::string, string)
+    //type_entry(std::string, wstring)
     type_entry(std::wstring, wstring)
     //type_entry(long, long);
     //type_entry(unsigned long, ulong);
@@ -80,10 +78,14 @@ void fbxvariant::set(const FB::variant& Var)
     type_entry(unsigned long long, uint64)
     type_entry(FB::FBVoid(), empty)
     type_entry(FB::FBNull(), null)
-    type_entry(FB::JSAPIPtr, jsapi)
-
-    if ( type == "jsapi" && (get_derived_object() != 0) )
-        type = "fbxjsapi";
+    type_entry(FB::JSAPIPtr, object)
+    if (*varType == typeid(std::string)) {
+        var = FB::utf8_to_wstring(Var.cast<std::string>());
+        type = "wstring";
+    } else 
+    {
+        // unknown type here
+    }
 }
 
 std::string fbxvariant::get_type() const {

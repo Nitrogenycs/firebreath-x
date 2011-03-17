@@ -6,17 +6,10 @@ using FireBreath;
 
 using System.Dynamic;
 
+//using System.Windows.Forms; // remember to remove the assembly
+
 namespace FireBreath
 {
-    public class MyJSAPI : JSAPI
-    {
-        public override bool TryGetMember(GetMemberBinder binder, out dynamic result)
-        {
-            getbinder.Name
-            return false;
-        }
-    }
-    
     public class ObjectJSAPI : FBXJSAPI
     {
         object wrappedObject;
@@ -45,7 +38,8 @@ namespace FireBreath
 
         public override bool HasProperty(string propertyName)
         {
-            if ( type.GetMember(propertyName, MemberTypes.All, BindingFlags.Default).Length != 0 ) return true;
+            //MessageBox.Show("HasProperty " + propertyName + "  " + type.ToString());
+            if (type.GetMember(propertyName, MemberTypes.Property | MemberTypes.Field | MemberTypes.Event | MemberTypes.Constructor, BindingFlags.Public /*| BindingFlags.NonPublic */| BindingFlags.Instance | BindingFlags.Static).Length != 0) return true;
             IDictionary dict = this.wrappedObject as IDictionary;
             if ( dict != null )
                 return dict.Contains(propertyName);
@@ -80,6 +74,7 @@ namespace FireBreath
         }
         public override bool GetProperty(string propertyName, fbxvariant value)
         {
+            //MessageBox.Show("GetProperty " + propertyName);
             // possible types: all, constructor, custom, event, field, method, nested type, property, typeinfo
             FieldInfo field = type.GetField(propertyName);
             if (field != null)
@@ -152,21 +147,57 @@ namespace FireBreath
 
         public override bool HasMethod(string methodName)
         {
+            //MessageBox.Show("HasMethod " + methodName);
             return type.GetMethod(methodName) != null;
         }
 
         public override bool Invoke(string methodName, VariantVector args, fbxvariant result)
         {
-            System.Collections.Generic.List<object> arguments = new System.Collections.Generic.List<object>();
+            //MessageBox.Show("Invoke " + methodName);
+            System.Collections.Generic.List<object> convertedArgs = new System.Collections.Generic.List<object>();
             foreach( fbxvariant arg in args )
             {
-                arguments.Add( arg.ConvertToNet() );
+                convertedArgs.Add( arg.ConvertToNet() );
+            }
+            object[] arguments = convertedArgs.ToArray();
+
+            if (methodName == "")
+            {
+                //MessageBox.Show("InvokeConstructor " + (this.wrappedObject is Type));
+                if (this.wrappedObject is Type)
+                {
+                    System.Collections.Generic.List<Type> types = new System.Collections.Generic.List<Type>();
+                    foreach (object arg in arguments)
+                    {
+                        types.Add(arg.GetType());
+                    }
+                    ConstructorInfo constructorInfo = ((Type)this.wrappedObject).GetConstructor(types.ToArray());
+                    if (constructorInfo != null)
+                    {
+                        object newObject = constructorInfo.Invoke(arguments);
+                        return newObject.ConvertFromNet(result);
+                    }
+                    else
+                    {
+                        //throw
+                    }
+                }
+                //((MethodCall)this.wrappedObject).call(arguments).ConvertFromNet(result);
+            }
+            else
+            {
+                MethodInfo method = type.GetMethod(methodName);
+                if ( method != null)
+                {
+                    //type.InvokeMember(methodName, BindingFlags.Public /*| BindingFlags.NonPublic */| BindingFlags.Instance | BindingFlags.Static, null, this.wrappedObject, arguments).ConvertFromNet(result);
+                    method.Invoke(this.wrappedObject, arguments).ConvertFromNet(result);
+                }
+                else
+                {
+                    // throw
+                }
             }
 
-            if ( methodName == "" )
-                ((MethodCall)this.wrappedObject).call(arguments.ToArray()).ConvertFromNet(result);
-            else
-                type.InvokeMember(methodName, BindingFlags.Default, null, this.wrappedObject, arguments.ToArray()).ConvertFromNet(result);
 
             return true;
         }

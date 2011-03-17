@@ -26,15 +26,16 @@ public:
     std::string get_version();
 
     // Method echo
-    FB::JSAPIPtr loadExtension(const std::wstring& name);
+    FB::JSAPIPtr loadExtension(const std::wstring& name, const std::wstring& entryPoint, const std::wstring& methodName, const std::wstring& arguments);
     
 private:
     FBXSimpleTestPluginCSharpWeakPtr m_plugin;
     FB::BrowserHostPtr m_host;
 };
 
+FB_FORWARD_PTR(FBXContext);
 
-class FBXContext/* : FB::JSAPIAuto*/
+class FBXContext : public FB::JSAPIAuto
 {
 public:
     FBXContext(const FB::BrowserHostPtr& host);
@@ -44,7 +45,6 @@ public:
     FB::JSAPIPtr get_document() const;
     FB::JSAPIPtr get_window() const;
     FB::JSAPIPtr get_element() const;
-    FB::JSAPIPtr eval(const std::wstring& script);
 
 protected:
     FB::BrowserHostPtr m_host;

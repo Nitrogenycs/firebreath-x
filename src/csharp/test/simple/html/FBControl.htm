@@ -1,0 +1,104 @@
+<!--
+    Auto-generated test-site
+-->
+<html>
+<head>
+<title>test page for object fbcontrol</title>
+</head>
+    <script type="text/javascript">
+        function plugin0()
+        {
+            return document.getElementById('plugin0');
+        }
+        plugin = plugin0;
+        function addEvent(obj, name, func)
+        {
+            if (window.addEventListener) {
+                obj.addEventListener(name, func, false); 
+            } else {
+                obj.attachEvent("on"+name, func);
+            }
+        }
+        
+        function load()
+        {
+            addEvent(plugin(), 'fired', function(x){
+                alert('onfired() from load(): '+x)
+            });
+        }
+        function pluginLoaded() {
+            alert("Plugin loaded!");
+        }
+        
+        function addTestEvent()
+        {
+            addEvent(plugin(), 'fired', function(x){
+                alert('onfired(): '+x)
+            });
+        }
+        
+        function testEvent()
+        {
+            plugin().testEvent('test stuff');
+        }
+        
+        function pluginValid()
+        {
+            alert(plugin().valid);
+        }
+
+        function loadExtension()
+        {
+            var path = 'C:\\DCSDK\\External\\WebPlayer\\firebreath-x\\src\\csharp\\makefiles\\SimpleTest\\bin\\Release\\SimpleTest.dll';
+            var klass = 'TestApp.TestApp';
+            var method = 'createJSAPI';
+            var options = 'Hello hello';
+            var result = plugin().loadExtension(path, klass, method, options);
+            
+            var assert = function(field, value) {
+                if (result[field] != value) {
+                    var errorMsg = 'Field ' + field + ' was expected to be ' + value + ', but got ' + result[field];
+                    alert(errorMsg);
+                    //throw new Error(errorMsg);
+                }
+            };
+            
+            
+            assert( 'someBool', true );
+            assert( 'someInt', 42 );
+            assert( 'someUInt', 42 );
+            assert( 'someDouble', 42.1 );
+            assert( 'someFloat', 42.2 );
+            assert( 'someString', 'this is a c# string' );
+            assert( 'someShort', 42 );
+            assert( 'someUShort', 42 );
+            assert( 'someChar', 42 );
+            assert( 'someByte', 42 );
+            assert( 'someInt64', 42 );
+            assert( 'someUInt64', 42 );
+            assert( 'someNull', null );
+            assert( 'someEmpty', undefined );
+            assert( 'someObject', {} );
+            assert( 'someType', {} );
+
+            alert( result.someObject.data );
+
+            var members = [];
+            for (x in result.someObject) members.push( [x, result.someObject[x]] );
+            alert( members.length + ' member(s): ' + members );
+
+            alert( result.someType() );
+            result.someObject.ShowMessage('Hello from JS');
+
+        }
+    </script>
+<body onload="load()">
+<object id="plugin0" type="application/x-fbxsimpletestplugincsharp" width="300" height="300">
+    <param name="onload" value="pluginLoaded" />
+</object><br />
+<a href="#" onclick="javascript:addTestEvent()">set event handler</a> <br />
+<a href="#" onclick="javascript:testEvent()">Fire event</a> <br />
+<a href="#" onclick="javascript:pluginValid()">alert plugin valid</a> <br />
+<a href="#" onclick="javascript:loadExtension()">load extension</a> <br />
+</body>
+</html>

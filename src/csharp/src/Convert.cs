@@ -39,10 +39,8 @@ namespace FireBreath
                 case "empty":
                     // return Empty;
                     return null;
-                case "jsapi":
+                case "object":
                     return value.get_object();
-                case "fbxjsapi":
-                    return value.get_derived_object();
                 default:
                     // throw bad cast exception here?
                     return null;
@@ -79,8 +77,10 @@ namespace FireBreath
                 result.set_null();
             //else if (value == Empty)
             //    result.set_empty();
-            else if (value is JSAPI)
-                result.set((JSAPI)value);
+            else if (value is FBXJSAPI)
+                result.set((FBXJSAPI)value);
+            else if (value is Object)
+                result.set(new ObjectJSAPI(value));
             else
             {
                 // throw bad cast exception here?

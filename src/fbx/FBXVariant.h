@@ -20,8 +20,8 @@ public:
     fbxvariant_entry_def(float, float)
     //fbxvariant_entry_def(std::string, string)
     fbxvariant_entry_def(std::wstring, wstring)
-    //fbxvariant_entry_def(long, long);
-    //fbxvariant_entry_def(unsigned long, ulong);
+    //fbxvariant_entry_def(long, long)
+    //fbxvariant_entry_def(unsigned long, ulong)
     fbxvariant_entry_def(short, short)
     fbxvariant_entry_def(unsigned short, ushort)
     fbxvariant_entry_def(char, char)
@@ -35,11 +35,10 @@ public:
     void set_null();
     bool is_null();
 
-    void set(FB::JSAPI* value);
-    FB::JSAPI* get_object();
-    FBXJSAPI* get_derived_object();
+    void set(FBXJSAPI* value);
+    FBXJSAPI* get_object();
 
-    void set(const FB::variant& Var);
+    void set(const FB::variant& var);
 
     std::string get_type() const;
     FB::variant get_variant() const;

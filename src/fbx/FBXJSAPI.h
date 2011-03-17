@@ -1,31 +1,33 @@
-#include "JSAPI.h"
-#include "FBXVariant.h"
+#ifndef FBXJSAPI_H
+#define FBXJSAPI_H
 
-class FBXJSAPI : public FB::JSAPI
+#include <vector>
+#include <string>
+
+class fbxvariant;
+
+class FBXJSAPI
 {
 public:
-    FBXJSAPI();
-    FBXJSAPI( const FB::SecurityZone& securityLevel );
-        
     virtual
     ~FBXJSAPI();
 
 public:
     virtual std::vector<std::string> getMemberNames() const = 0;
-    virtual void getMemberNames(std::vector<std::string>& nameVector) const;
+    virtual size_t getMemberCount() const = 0;
 
     virtual bool SetProperty(int idx, const fbxvariant& value) = 0;
-    virtual void SetProperty(int idx, const FB::variant& value);
+    virtual bool SetProperty(const std::string& propertyName, const fbxvariant& value) = 0;    
 
-    virtual bool SetProperty(const std::string& propertyName, const fbxvariant& value) = 0;
-    virtual void SetProperty(const std::string& propertyName, const FB::variant& value);
-    
-    virtual bool GetProperty(const std::string& propertyName, fbxvariant& value) = 0;
-    virtual FB::variant GetProperty(const std::string& propertyName);
-    
+    virtual bool GetProperty(const std::string& propertyName, fbxvariant& value) = 0;    
     virtual bool GetProperty(int idx, fbxvariant& value) = 0;
-    virtual FB::variant GetProperty(int idx);
 
-    virtual bool Invoke(const std::string& methodName, const std::vector<fbxvariant>& args, fbxvariant& result) = 0;
-    virtual FB::variant Invoke(const std::string& methodName, const std::vector<FB::variant>& args);
+    virtual bool HasProperty(const std::string& propertyName) const = 0;
+    virtual bool HasProperty(int idx) const = 0;
+    
+    virtual bool HasMethod(const std::string& methodName) const= 0;
+
+    virtual bool Invoke(const std::string& methodName, const std::vector<fbxvariant>& args, fbxvariant& returnValue) = 0;
 };
+
+#endif
