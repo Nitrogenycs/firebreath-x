@@ -9,10 +9,13 @@
 #include "DOM/Document.h"
 #include "APITypes.h"
 #include "PyHelloWorldAPI.h"
+#include "JSAPIWrapper.h"
 
 #include <Python.h>
 
-void __JSAPI_no_delete(FB::JSAPI* ptr) {}
+typedef boost::shared_ptr<FBXJSAPI> FBXJSAPIPtr;
+
+void __JSAPI_no_delete(FBXJSAPI* ptr) {}
 
 std::string __convert_py_to_string(PyObject* py_str) {
     Py_ssize_t str_len = PyString_Size(py_str);
@@ -227,19 +230,6 @@ FB::variant PyHelloWorldAPI::hello_py_extension() {
         goto return_result;
     }
 
-    // ATTENTION: i believe somewhere here is some problem with ownership
-    //       causing a crash in NPJavascriptObject
-    //       (at end of Enumerate)
-    // what i've tried - but didn't help:
-    //  - drag ownership from python proxy 
-    //          for the case that proxy destroys a PyObj that py wants to ref-kill too
-    //  - not to decrease any of the python refs
-    //          for the case that proxy tries to destroy an already destructed ref-counted pyobj
-    //  - use a getMemberName(idx) instead of getMemberNames()
-    //          for the case that std::vector-wrapper causes problems
-    //  - copy returned strings
-    //          for the case of some char* deletion  problem
-    //
     pArgs = PyTuple_New(0);
     pJsApi = PyObject_CallObject(pCreateJSAPI, pArgs);
     Py_DECREF(pArgs);
@@ -276,11 +266,8 @@ FB::variant PyHelloWorldAPI::hello_py_extension() {
 
     long ptr = PyLong_AsLong(pSwigObjPtr);
 
-    JSAPI* jsapi = reinterpret_cast<JSAPI*>(ptr);
-
-    // leave python ownership (won't be decref'd until dll unload...)
-    hello_py_ext_instance = FB::JSAPIPtr(jsapi, __JSAPI_no_delete);
-
+    FBXJSAPI* jsapi = reinterpret_cast<FBXJSAPI*>(ptr);
+    hello_py_ext_instance = FB::JSAPIPtr(new JSAPIWrapper(jsapi));
     result = FB::variant(hello_py_ext_instance);
 
 return_result:
