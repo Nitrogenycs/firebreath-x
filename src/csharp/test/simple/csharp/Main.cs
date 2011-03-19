@@ -1,13 +1,18 @@
 ﻿using System;
 using System.Windows.Forms;
+using System.Collections.Generic;
 using FireBreath;
 
 namespace TestApp
 {
     public class MyClass
     {
+        string _value;
+        public static int staticInt = 123;
+
         public MyClass()
         {
+            _value = "123";
         }
 
         public void ShowMessage(string msg)
@@ -18,6 +23,12 @@ namespace TestApp
         public string data
         {
             get { return "123"; }
+        }
+
+        public string changeThis
+        {
+            get { return this._value; }
+            set { this._value = value;  }
         }
     }
 
@@ -39,6 +50,8 @@ namespace TestApp
         public object someEmpty = null;
         public object someObject = new MyClass();
         public System.Type someType = typeof(MyClass);
+        public List<object> someList = new List<object>() { new MyClass(), "Hello", new MyClass() };
+        public Dictionary<string, object> someDict = new Dictionary<string, object>() { { "item1", new MyClass() }, { "item2", "value2" } };
 
         public void run()
         {
@@ -64,17 +77,18 @@ namespace TestApp
 
         public static int createJSAPI(string entryInfo)
         {
-            try
-            {
-                FireBreath.Startup.initialize(entryInfo, rootApi, out context, out options);
-            }
-            catch
-            {
-                return 1;
-            }
+            AppDomain currentDomain = AppDomain.CurrentDomain;
+            currentDomain.UnhandledException += new UnhandledExceptionEventHandler(UnhandledExceptionHandler);
+            FireBreath.Startup.initialize(entryInfo, rootApi, out context, out options);
             return 0;
         }
 
+        static void UnhandledExceptionHandler(object sender, UnhandledExceptionEventArgs args)
+        {
+            Exception e = (Exception)args.ExceptionObject;
+            MessageBox.Show(e.ToString(), "C# plugin error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+        }
     }
+
 
 }

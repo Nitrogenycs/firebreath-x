@@ -39,6 +39,9 @@
     <Compile Include="..\..\generated\FBXJSAPI.cs">
       <Link>wrapper\FBXJSAPI.cs</Link>
     </Compile>
+    <Compile Include="..\..\generated\FBXResult.cs">
+      <Link>wrapper\FBXResult.cs</Link>
+    </Compile>
     <Compile Include="..\..\generated\fbxvariant.cs">
       <Link>wrapper\fbxvariant.cs</Link>
     </Compile>

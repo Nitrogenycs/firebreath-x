@@ -6,7 +6,22 @@ namespace FireBreath
 {
     public static class Convert
     {
-        public static Object ConvertToNet(this fbxvariant value)
+        // todo: refactor this into one function
+        public static FBXResult ConvertToNet(this fbxvariant value,  out Object result)
+        {
+            try
+            {
+                result = ConvertToNet2(value);
+            }
+            catch (InvalidCastException e)
+            {
+                result = null;
+                return new FBXResult(false, "Cannot cast object of type '" + value + "' " + e);
+            }
+            return FBXResult.successful;
+        }
+
+        public static Object ConvertToNet2(this fbxvariant value)
         {
             switch (value.get_type())
             {
@@ -17,7 +32,11 @@ namespace FireBreath
                 case "uint":
                     return value.get_uint();
                 case "double":
-                    return value.get_double();
+                    {
+                        Double v = value.get_double();
+                        if (v == (int)v) return (int)v;
+                        return v;
+                    }
                 case "float":
                     return value.get_float();
                 case "wstring":
@@ -41,13 +60,12 @@ namespace FireBreath
                     return null;
                 case "object":
                     return value.get_object();
-                default:
-                    // throw bad cast exception here?
-                    return null;
             }
+
+            throw new InvalidCastException("Cannot cast object of type '" + value.get_type() + "'");
         }
 
-        public static bool ConvertFromNet(this Object value, fbxvariant result)
+        public static FBXResult ConvertFromNet(this Object value, fbxvariant result)
         {
             if (value is bool)
                 result.set((bool)value);
@@ -84,9 +102,9 @@ namespace FireBreath
             else
             {
                 // throw bad cast exception here?
-                return false;
+                return new FBXResult(false, "Cannot cast '" + value.ToString() + "' to an fbx type");
             }
-            return true;
+            return FBXResult.successful;
         }
     }
 
