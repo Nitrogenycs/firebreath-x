@@ -21,6 +21,8 @@ namespace FireBreath
             type = wrappedObject.GetType();
         }
 
+        // ----- member enumeration ------
+
         public override StringVector getMemberNames()
         {
             StringVector result = new StringVector();
@@ -35,6 +37,8 @@ namespace FireBreath
         {
             return (uint)type.GetMembers().Length;
         }
+
+        // ----- HasProperty methods ------
 
         public override bool HasProperty(string propertyName)
         {
@@ -59,91 +63,151 @@ namespace FireBreath
             return false;
         }
 
-        public override bool GetProperty(int idx, fbxvariant value)
+
+        // ----- GetProperty methods ------
+
+        FBXResult GetIndexedProperty(object idx, fbxvariant value)
         {
-            IList indexable = this.wrappedObject as IList;
-            if ( indexable != null )
-                return indexable[idx].ConvertFromNet(value);
-
-            IDictionary dict = this.wrappedObject as IDictionary;
-            if ( dict != null )
-                return dict[idx].ConvertFromNet(value);
-
+            object obj;
+            PropertyInfo property = type.GetProperty("Item");
+            if (property != null)
+            {
+                try
+                {
+                    obj = property.GetValue(this.wrappedObject, new object[] { idx });
+                }
+                catch (Exception e)
+                {
+                    return new FBXResult(false, e.ToString());
+                }
+                return obj.ConvertFromNet(value);
+            }
             // need to check if this.wrappedObject can be indexed directly?
-            return false;
+            return new FBXResult(false, "Property '" + idx + "' not found");
         }
-        public override bool GetProperty(string propertyName, fbxvariant value)
+
+        public override FBXResult GetProperty(int idx, fbxvariant value)
+        {
+            return GetIndexedProperty(idx, value);
+        }
+
+        public override FBXResult GetProperty(string propertyName, fbxvariant value)
         {
             //MessageBox.Show("GetProperty " + propertyName);
             // possible types: all, constructor, custom, event, field, method, nested type, property, typeinfo
+            object obj;
             FieldInfo field = type.GetField(propertyName);
             if (field != null)
-                return field.GetValue(this.wrappedObject).ConvertFromNet(value);
-
-            /*MethodInfo method = type.GetMethod(propertyName);
-            if (method != null)
-                return (new MethodCall(this.wrappedObject, method)).ConvertFromNet(value);*/
+            {
+                try
+                {
+                    obj = field.GetValue(this.wrappedObject);
+                }
+                catch (Exception e)
+                {
+                    return new FBXResult(false, e.ToString());
+                }
+                return obj.ConvertFromNet(value);
+            }
 
             PropertyInfo property = type.GetProperty(propertyName);
             if ( property != null )
-                return property.GetValue(this.wrappedObject, null).ConvertFromNet(value);
-
-            IDictionary dict = this.wrappedObject as IDictionary;
-            if ( dict != null )
-                return dict.Contains(propertyName);
-
-            return false;
-        }
-
-        public override bool SetProperty(int idx, fbxvariant value)
-        {
-            IList indexable = this.wrappedObject as IList;
-            if (indexable != null)
             {
-                indexable[idx] = value.ConvertToNet();
-                return true;
-            }
-
-            IDictionary dict = this.wrappedObject as IDictionary;
-            if (dict != null)
-            {
-                dict[idx] = value.ConvertToNet();
-                return true;
-            }
-
-            // need to check if this.wrappedObject can be indexed directly?
-            return false;
-        }
-        public override bool SetProperty(string propertyName, fbxvariant value)
-        {
-            // possible types: all, constructor, custom, event, field, method, nested type, property, typeinfo
-            FieldInfo field = type.GetField(propertyName);
-            if (field != null)
-            {
-                field.SetValue(this.wrappedObject, value.ConvertToNet());
-                return true;
+                try
+                {
+                    obj = property.GetValue(this.wrappedObject, null);
+                }
+                catch (Exception e)
+                {
+                    return new FBXResult(false, e.ToString());
+                }
+                return obj.ConvertFromNet(value);
             }
 
             /*MethodInfo method = type.GetMethod(propertyName);
             if (method != null)
                 return (new MethodCall(this.wrappedObject, method)).ConvertFromNet(value);*/
+
+            return GetIndexedProperty(propertyName, value);
+        }
+
+
+        // ----- SetProperty methods ------
+
+        FBXResult SetIndexedProperty(object idx, object value)
+        {
+            PropertyInfo property = type.GetProperty("Item");
+            if (property != null)
+            {
+                try
+                {
+                    property.SetValue(this.wrappedObject, value, new object[]{idx});
+                }
+                catch (Exception e)
+                {
+                    return new FBXResult(false, e.ToString());
+                }
+                return FBXResult.successful;
+            }
+
+            return new FBXResult(false, "Property '" + idx + "' not found");
+        }
+        
+        
+        public override FBXResult SetProperty(int idx, fbxvariant value)
+        {
+            object result;
+            FBXResult returnValue = value.ConvertToNet(out result);
+            if (!returnValue.success)
+                return returnValue;
+
+            return SetIndexedProperty(idx, result);
+        }
+
+        public override FBXResult SetProperty(string propertyName, fbxvariant value)
+        {
+            object result;
+            FBXResult returnValue = value.ConvertToNet(out result);
+            if (!returnValue.success)
+                return returnValue;
+
+            FieldInfo field = type.GetField(propertyName);
+            if (field != null)
+            {
+                try
+                {
+                    field.SetValue(this.wrappedObject, result);
+                }
+                catch (Exception e)
+                {
+                    return new FBXResult(false, e.ToString());
+                }
+                return returnValue;
+            }
 
             PropertyInfo property = type.GetProperty(propertyName);
             if (property != null)
             {
-                property.SetValue(this.wrappedObject, value.ConvertToNet(), null);
-                return true;
+                try
+                {
+                    field.SetValue(this.wrappedObject, result);
+                }
+                catch (Exception e)
+                {
+                    return new FBXResult(false, e.ToString());
+                }
+                return returnValue;
             }
 
-            IDictionary dict = this.wrappedObject as IDictionary;
-            if (dict != null)
-            {
-                dict[propertyName] = value;
-                return true;
-            }
+            /*MethodInfo method = type.GetMethod(propertyName);
+            if (method != null)
+                return (new MethodCall(this.wrappedObject, method)).ConvertFromNet(value);*/
 
-            return false;
+            return SetIndexedProperty(propertyName, result);
         }
+
+
+        // ------- Method related -------
 
         public override bool HasMethod(string methodName)
         {
@@ -151,13 +215,17 @@ namespace FireBreath
             return type.GetMethod(methodName) != null;
         }
 
-        public override bool Invoke(string methodName, VariantVector args, fbxvariant result)
+        public override FBXResult Invoke(string methodName, VariantVector args, fbxvariant result)
         {
             //MessageBox.Show("Invoke " + methodName);
             System.Collections.Generic.List<object> convertedArgs = new System.Collections.Generic.List<object>();
             foreach( fbxvariant arg in args )
             {
-                convertedArgs.Add( arg.ConvertToNet() );
+                object converted;
+                FBXResult returnValue = arg.ConvertToNet(out converted);
+                if (!returnValue.success)
+                    return returnValue;
+                convertedArgs.Add(converted);
             }
             object[] arguments = convertedArgs.ToArray();
 
@@ -174,14 +242,19 @@ namespace FireBreath
                     ConstructorInfo constructorInfo = ((Type)this.wrappedObject).GetConstructor(types.ToArray());
                     if (constructorInfo != null)
                     {
-                        object newObject = constructorInfo.Invoke(arguments);
+                        object newObject;
+                        try
+                        {
+                            newObject = constructorInfo.Invoke(arguments);
+                        }
+                        catch (Exception e)
+                        {
+                            return new FBXResult(false, e.ToString());
+                        }
                         return newObject.ConvertFromNet(result);
                     }
-                    else
-                    {
-                        //throw
-                    }
                 }
+                return new FBXResult(false, "Method '" + methodName + "' not callable");
                 //((MethodCall)this.wrappedObject).call(arguments).ConvertFromNet(result);
             }
             else
@@ -189,17 +262,21 @@ namespace FireBreath
                 MethodInfo method = type.GetMethod(methodName);
                 if ( method != null)
                 {
+                    object methodResult;
                     //type.InvokeMember(methodName, BindingFlags.Public /*| BindingFlags.NonPublic */| BindingFlags.Instance | BindingFlags.Static, null, this.wrappedObject, arguments).ConvertFromNet(result);
-                    method.Invoke(this.wrappedObject, arguments).ConvertFromNet(result);
-                }
-                else
-                {
-                    // throw
+                    try
+                    {
+                        methodResult = method.Invoke(this.wrappedObject, arguments);
+                    }
+                    catch (Exception e)
+                    {
+                        return new FBXResult(false, e.ToString());
+                    }
+                    return methodResult.ConvertFromNet(result);
                 }
             }
 
-
-            return true;
+            return new FBXResult(false, "Method '" + methodName + "' not found");
         }
     }
     

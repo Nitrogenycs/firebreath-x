@@ -25,28 +25,44 @@ void JSAPIWrapper::SetProperty(int idx, const FB::variant& value)
 {
     fbxvariant var;
     var.set( value );
-    bool success = wrapped->SetProperty( idx, var );
+    FBXResult result = wrapped->SetProperty( idx, var );
+    if ( !result.success )
+    {
+        throw FB::script_error("Error setting property '" + boost::lexical_cast<std::string>(idx) + "'. Reason: " + result.message );
+    }
 }
 
 void JSAPIWrapper::SetProperty(const std::string& propertyName, const FB::variant& value) 
 {
     fbxvariant var;
     var.set( value );
-    bool success = wrapped->SetProperty( propertyName, var );
+    FBXResult result = wrapped->SetProperty( propertyName, var );
+    if ( !result.success )
+    {
+        throw FB::script_error("Error setting property '" + propertyName + "'. Reason: " + result.message );
+    }
 }
     
 FB::variant JSAPIWrapper::GetProperty(int idx)
 {
-    fbxvariant result;
-    bool success = wrapped->GetProperty(idx, result);
-    return result.get_variant();
+    fbxvariant value;
+    FBXResult result = wrapped->GetProperty( idx, value );
+    if ( !result.success )
+    {
+        throw FB::script_error("Error getting property '" + boost::lexical_cast<std::string>(idx) + "'. Reason: " + result.message );
+    }
+    return value.get_variant();
 }
 
 FB::variant JSAPIWrapper::GetProperty(const std::string& propertyName)
 {
-    fbxvariant result;
-    bool success = wrapped->GetProperty(propertyName, result);
-    return result.get_variant();
+    fbxvariant value;
+    FBXResult result = wrapped->GetProperty( propertyName, value );
+    if ( !result.success )
+    {
+        throw FB::script_error("Error getting property '" + propertyName + "'. Reason: " + result.message );
+    }
+    return value.get_variant();
 }
     
 bool JSAPIWrapper::HasProperty(int idx) const
@@ -66,11 +82,15 @@ bool JSAPIWrapper::HasMethod(const std::string& methodName) const
 
 FB::variant JSAPIWrapper::Invoke(const std::string& methodName, const std::vector<FB::variant>& args)
 {
-    fbxvariant result;
+    fbxvariant returnValue;
     std::vector<fbxvariant> fbxArgs(args.size());
     for ( size_t i = 0; i < args.size(); i++ ) {
         fbxArgs[i].set( args[i] );
     }
-    bool success = wrapped->Invoke(methodName, fbxArgs, result);
-    return result.get_variant();
+    FBXResult result = wrapped->Invoke(methodName, fbxArgs, returnValue);
+    if ( !result.success )
+    {
+        throw FB::script_error("Error invoking method '" + methodName + "'. Reason: " + result.message);
+    }
+    return returnValue.get_variant();
 }

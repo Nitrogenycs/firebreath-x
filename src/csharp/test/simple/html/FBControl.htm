@@ -53,42 +53,108 @@
             var klass = 'TestApp.TestApp';
             var method = 'createJSAPI';
             var options = 'Hello hello';
+            alert('XX');
             var result = plugin().loadExtension(path, klass, method, options);
+            alert('YY');
             
-            var assert = function(field, value) {
-                if (result[field] != value) {
-                    var errorMsg = 'Field ' + field + ' was expected to be ' + value + ', but got ' + result[field];
-                    alert(errorMsg);
-                    //throw new Error(errorMsg);
+            var assert = function(condition, msg) {
+                if ( !condition ) {
+                    alert( 'Error ' + msg );
                 }
+            }
+            
+            var assertVal = function(obj, field, value) {
+                var val = obj[field];
+                assert( val == value, 'Field ' + field + ' was expected to be ' + value + ', but got ' + val + ' (' + typeof(val) + ')' );
             };
             
+            try
+            {
+                // accessing and converting basic types C# -> JS
+                assertVal( result, 'someBool', true );
+                assertVal( result, 'someInt', 42 );
+                assertVal( result, 'someUInt', 42 );
+                assert( Math.abs(result.someDouble-42.1) < 0.001, 'wrong double' );
+                assert( Math.abs(result.someFloat-42.2) < 0.001, 'wrong float' );
+                assertVal( result, 'someString', 'this is a c# string' );
+                assertVal( result, 'someShort', 42 );
+                assertVal( result, 'someUShort', 42 );
+                assertVal( result, 'someChar', 42 );
+                assertVal( result, 'someByte', 42 );
+                assertVal( result, 'someInt64', 42 );
+                assertVal( result, 'someUInt64', 42 );
+                assertVal( result, 'someNull', null );
+                assertVal( result, 'someEmpty', undefined );
+                assert( result.someObject != null, 'wrong object' );
+                assert( result.someType != null, 'wrong type' );
+                assert( result.someList.length == 2, 'wrong list length' );
+                assert( result.someDict.length == 2, 'wrong dict length' );
+                assertVal( result.someList, 1, 'Hello' );
+                assertVal( result.someList, 77, undefined );
+                assertVal( result.someList, '77', undefined );
+                assertVal( result.someDict, 'item2', 'value2' );
+                assertVal( result.someDict, 'item66', undefined );
+                assertVal( result.someDict, 66, undefined );
+    
+                // accessing property of an object
+                assertVal( result.someObject, 'data', '123' );
+                
+                // accessing non-existent property
+                assertVal( result, 'idonotexist', undefined );
+    
+                // enumerating all members and getting their values
+                var members = [];
+                for (x in result.someObject) members.push( [x, result.someObject[x]] );
+                alert( members.length + ' member(s): ' + members );
+    
+                // method call on an object
+                result.someObject.ShowMessage('Hello from JS');
+                // creating a new instance of an object (doesn't use 'new')
+                var newObject = result.someType();
+                
+                // creating and calling a method object
+                // var func = result.run;
+                // func();
+                
+                // setting property
+                assertVal( newObject, 'changeThis', '123' );
+                newObject.changeThis = '234';
+                assertVal( newObject, 'changeThis', '234' );
+                
+                // setting non-existent property
+                assertVal( newObject, 'idonotexist', undefined );
+                newObject.idonotexist = 123;    // should this raise an exception or should this work and create the property?
+                assertVal( newObject, 'idonotexist', undefined );
+    
+                // setting value with wrong type
+                assertVal( newObject, 'changeThis', '234' );
+                //newObject.changeThis = 123;
+                assertVal( newObject, 'changeThis', '234' );
+    
+                // testing static properties
+                objA = result.someType();
+                objB = result.someType();
+                assertVal( objA, 'staticInt', 123 );
+                assertVal( objB, 'staticInt', 123 );
+                objA.staticInt = 234;
+                assertVal( objA, 'staticInt', 234 );
+                assertVal( objB, 'staticInt', 234 );
+            }
+            catch (e)
+            {
+                alert('Unexpected exception ' + e)
+            }
+                
+            }
+            alert('All tests completed');
             
-            assert( 'someBool', true );
-            assert( 'someInt', 42 );
-            assert( 'someUInt', 42 );
-            assert( 'someDouble', 42.1 );
-            assert( 'someFloat', 42.2 );
-            assert( 'someString', 'this is a c# string' );
-            assert( 'someShort', 42 );
-            assert( 'someUShort', 42 );
-            assert( 'someChar', 42 );
-            assert( 'someByte', 42 );
-            assert( 'someInt64', 42 );
-            assert( 'someUInt64', 42 );
-            assert( 'someNull', null );
-            assert( 'someEmpty', undefined );
-            assert( 'someObject', {} );
-            assert( 'someType', {} );
-
-            alert( result.someObject.data );
-
-            var members = [];
-            for (x in result.someObject) members.push( [x, result.someObject[x]] );
-            alert( members.length + ' member(s): ' + members );
-
-            alert( result.someType() );
-            result.someObject.ShowMessage('Hello from JS');
+            
+            // todo: remove potential memory leaks
+            // todo: dynamic on c# side to access js properties
+            // todo: add support for method objects
+            // todo: unload assembly http://msdn.microsoft.com/de-de/library/ms173101(v=VS.100).aspx
+            // todo: make host run in separate thread?
+            // todo: security checks
 
         }
     </script>

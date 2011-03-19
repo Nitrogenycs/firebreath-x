@@ -21,30 +21,60 @@ size_t FBXJSAPIWrapper::getMemberCount() const
     return wrapped->getMemberCount();
 }
 
-bool FBXJSAPIWrapper::SetProperty(int idx, const fbxvariant& value) 
+FBXResult FBXJSAPIWrapper::SetProperty(int idx, const fbxvariant& value) 
 {
-    wrapped->SetProperty( idx, value.get_variant() );
-    return true;
+    try
+    {
+        wrapped->SetProperty( idx, value.get_variant() );
+    }
+    catch (FB::script_error& e)
+    {
+        return FBXResult(false, "Error setting property '" + boost::lexical_cast<std::string>(idx) + "'. Reason: " + e.what());
+    }
+    return FBXResult::successful;
 }
 
-bool FBXJSAPIWrapper::SetProperty(const std::string& propertyName, const fbxvariant& value) 
+FBXResult FBXJSAPIWrapper::SetProperty(const std::string& propertyName, const fbxvariant& value) 
 {
-    wrapped->SetProperty( propertyName, value.get_variant() );
-    return true;
+    try
+    {
+        wrapped->SetProperty( propertyName, value.get_variant() );
+    }
+    catch (FB::script_error& e)
+    {
+        return FBXResult(false, "Error setting property '" + propertyName + "'. Reason: " + e.what());
+    }
+    return FBXResult::successful;
 }
         
-bool FBXJSAPIWrapper::GetProperty(int idx, fbxvariant& value)
+FBXResult FBXJSAPIWrapper::GetProperty(int idx, fbxvariant& value)
 {
-    FB::variant result = wrapped->GetProperty(idx);
+    FB::variant result;
+    try
+    {
+        result = wrapped->GetProperty(idx);
+    }
+    catch (FB::script_error& e)
+    {
+        return FBXResult(false, "Error getting property '" + boost::lexical_cast<std::string>(idx) + "'. Reason: " + e.what());
+    }
     value.set(result);
-    return true;
+    return FBXResult::successful;
 }
 
-bool FBXJSAPIWrapper::GetProperty(const std::string& propertyName, fbxvariant& value)
+FBXResult FBXJSAPIWrapper::GetProperty(const std::string& propertyName, fbxvariant& value)
 {
-    FB::variant result = wrapped->GetProperty(propertyName);
+    FB::variant result;
+    try
+    {
+        result = wrapped->GetProperty(propertyName);
+    }
+    catch (FB::script_error& e)
+    {
+        return FBXResult(false, "Error getting property '" + propertyName + "'. Reason: " + e.what());
+    }
     value.set(result);
-    return true;
+    return FBXResult::successful;
 }
 
 
@@ -63,13 +93,22 @@ bool FBXJSAPIWrapper::HasMethod(const std::string& methodName) const
     return wrapped->HasMethod(methodName);
 }
 
-bool FBXJSAPIWrapper::Invoke(const std::string& methodName, const std::vector<fbxvariant>& args, fbxvariant& returnValue)
+FBXResult FBXJSAPIWrapper::Invoke(const std::string& methodName, const std::vector<fbxvariant>& args, fbxvariant& returnValue)
 {
     std::vector<FB::variant> fbArgs(args.size());
     for ( size_t i = 0; i < args.size(); i++ ) {
         fbArgs[i] = args[i].get_variant();
     }
-    FB::variant value = wrapped->Invoke(methodName, fbArgs);
+
+    FB::variant value;
+    try
+    {
+        value = wrapped->Invoke(methodName, fbArgs);
+    }
+    catch (FB::script_error& e)
+    {
+        return FBXResult(false, "Error invoking method '" + methodName + "'. Reason: " + e.what());
+    }
     returnValue.set( value );
-    return true;
+    return FBXResult::successful;
 }

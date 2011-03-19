@@ -18,6 +18,8 @@
 %include "FBXVariant.h"
 %template(VariantVector) std::vector<fbxvariant>;
 
+%include "FBXResult.h"
+
 %ignore FBXJSAPI::FBXJSAPI(FB::JSAPIPtr wrapped);
 %feature("director") FBXJSAPI;
 %include "FBXJSAPI.h"
