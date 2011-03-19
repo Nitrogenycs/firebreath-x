@@ -53,21 +53,31 @@
             var klass = 'TestApp.TestApp';
             var method = 'createJSAPI';
             var options = 'Hello hello';
-            alert('XX');
             var result = plugin().loadExtension(path, klass, method, options);
-            alert('YY');
             
             var assert = function(condition, msg) {
                 if ( !condition ) {
                     alert( 'Error ' + msg );
                 }
-            }
+            };
             
             var assertVal = function(obj, field, value) {
                 var val = obj[field];
                 assert( val == value, 'Field ' + field + ' was expected to be ' + value + ', but got ' + val + ' (' + typeof(val) + ')' );
             };
             
+            var assertRaises = function(callable) {
+                try
+                {
+                    callable()
+                }
+                catch (e)
+                {
+                    return;
+                }
+                alert( 'Error, callable did not raise exception:\n\n' + callable );
+            };
+
             try
             {
                 // accessing and converting basic types C# -> JS
@@ -87,8 +97,8 @@
                 assertVal( result, 'someEmpty', undefined );
                 assert( result.someObject != null, 'wrong object' );
                 assert( result.someType != null, 'wrong type' );
-                assert( result.someList.length == 2, 'wrong list length' );
-                assert( result.someDict.length == 2, 'wrong dict length' );
+                assertVal( result.someList, 'Count', 3 );
+                assertVal( result.someDict, 'Count', 2 );
                 assertVal( result.someList, 1, 'Hello' );
                 assertVal( result.someList, 77, undefined );
                 assertVal( result.someList, '77', undefined );
@@ -123,14 +133,21 @@
                 
                 // setting non-existent property
                 assertVal( newObject, 'idonotexist', undefined );
-                newObject.idonotexist = 123;    // should this raise an exception or should this work and create the property?
+                // should this raise an exception or should this work and create the property?
+                // hmm, it seems SetProperty is never called for this one, so no idea how to intercept this
+                assertRaises( function() { newObject.idonotexist = 123; } );
                 assertVal( newObject, 'idonotexist', undefined );
     
                 // setting value with wrong type
                 assertVal( newObject, 'changeThis', '234' );
-                //newObject.changeThis = 123;
+                assertRaises( function() { newObject.changeThis = 123 } );
                 assertVal( newObject, 'changeThis', '234' );
     
+                // setting read-only value
+                assertVal( newObject, 'data', '123' );
+                assertRaises( function() { newObject.data = '666' } );
+                assertVal( newObject, 'data', '123' );
+
                 // testing static properties
                 objA = result.someType();
                 objB = result.someType();
@@ -139,14 +156,15 @@
                 objA.staticInt = 234;
                 assertVal( objA, 'staticInt', 234 );
                 assertVal( objB, 'staticInt', 234 );
+
+                alert('All tests completed successfully');
             }
             catch (e)
             {
                 alert('Unexpected exception ' + e)
+                alert('Some tests had errors');
             }
                 
-            }
-            alert('All tests completed');
             
             
             // todo: remove potential memory leaks
