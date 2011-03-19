@@ -21,6 +21,7 @@ namespace FireBreath
             type = wrappedObject.GetType();
         }
 
+
         // ----- member enumeration ------
 
         public override StringVector getMemberNames()
@@ -38,29 +39,18 @@ namespace FireBreath
             return (uint)type.GetMembers().Length;
         }
 
+
         // ----- HasProperty methods ------
 
         public override bool HasProperty(string propertyName)
         {
-            //MessageBox.Show("HasProperty " + propertyName + "  " + type.ToString());
-            if (type.GetMember(propertyName, MemberTypes.Property | MemberTypes.Field | MemberTypes.Event | MemberTypes.Constructor, BindingFlags.Public /*| BindingFlags.NonPublic */| BindingFlags.Instance | BindingFlags.Static).Length != 0) return true;
-            IDictionary dict = this.wrappedObject as IDictionary;
-            if ( dict != null )
-                return dict.Contains(propertyName);
-
-            return false;
+            fbxvariant temp = new fbxvariant();
+            return GetProperty(propertyName, temp).success;
         }
         public override bool HasProperty(int idx)
         {
-            IList indexable = this.wrappedObject as IList;
-            if ( indexable != null )
-                return (idx >= 0) && (idx < indexable.Count);
-
-            IDictionary dict = this.wrappedObject as IDictionary;
-            if ( dict != null )
-                return dict.Contains(idx);
-
-            return false;
+            fbxvariant temp = new fbxvariant();
+            return GetProperty(idx, temp).success;
         }
 
 
@@ -88,12 +78,12 @@ namespace FireBreath
 
         public override FBXResult GetProperty(int idx, fbxvariant value)
         {
+            //MessageBox.Show("GetProperty #1 " + idx);
             return GetIndexedProperty(idx, value);
         }
 
         public override FBXResult GetProperty(string propertyName, fbxvariant value)
         {
-            //MessageBox.Show("GetProperty " + propertyName);
             // possible types: all, constructor, custom, event, field, method, nested type, property, typeinfo
             object obj;
             FieldInfo field = type.GetField(propertyName);
@@ -128,7 +118,16 @@ namespace FireBreath
             if (method != null)
                 return (new MethodCall(this.wrappedObject, method)).ConvertFromNet(value);*/
 
-            return GetIndexedProperty(propertyName, value);
+            FBXResult result = GetIndexedProperty(propertyName, value);
+            if (!result.success)
+            {
+                int idx;
+                if (Int32.TryParse(propertyName, out idx))
+                {
+                    return GetIndexedProperty(idx, value);
+                }
+            }
+            return result;
         }
 
 
@@ -166,8 +165,8 @@ namespace FireBreath
 
         public override FBXResult SetProperty(string propertyName, fbxvariant value)
         {
-            object result;
-            FBXResult returnValue = value.ConvertToNet(out result);
+            object convertedValue;
+            FBXResult returnValue = value.ConvertToNet(out convertedValue);
             if (!returnValue.success)
                 return returnValue;
 
@@ -176,7 +175,7 @@ namespace FireBreath
             {
                 try
                 {
-                    field.SetValue(this.wrappedObject, result);
+                    field.SetValue(this.wrappedObject, convertedValue);
                 }
                 catch (Exception e)
                 {
@@ -190,7 +189,7 @@ namespace FireBreath
             {
                 try
                 {
-                    field.SetValue(this.wrappedObject, result);
+                    property.SetValue(this.wrappedObject, convertedValue, null);
                 }
                 catch (Exception e)
                 {
@@ -203,7 +202,16 @@ namespace FireBreath
             if (method != null)
                 return (new MethodCall(this.wrappedObject, method)).ConvertFromNet(value);*/
 
-            return SetIndexedProperty(propertyName, result);
+            FBXResult result = SetIndexedProperty(propertyName, convertedValue);
+            if (!result.success)
+            {
+                int idx;
+                if (Int32.TryParse(propertyName, out idx))
+                {
+                    return SetIndexedProperty(idx, convertedValue);
+                }
+            }
+            return result;
         }
 
 
