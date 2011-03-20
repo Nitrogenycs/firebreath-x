@@ -46,6 +46,7 @@ set(FBX_SOURCES
 	../fbx/FBXJSAPIWrapper.cpp
 	../fbx/JSAPIWrapper.cpp
     ../fbx/FBXJSAPI.cpp
+    ../fbx/FBXResult.cpp
 )
 add_library(fbxlib ${FBX_SOURCES})
 

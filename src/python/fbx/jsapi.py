@@ -25,22 +25,13 @@ class PyJSAPI(FBXJSAPI):
 
         pass
 
-    def getMemberNames(self, arg=None):
-        if arg == None:
-            return self.member_names
-        else:
-            for m in self.member_names:
-                arg.push_back(m)
-            return True 
-
-        pass
+    def getMemberNames(self):
+        return self.member_names
     
     def getMemberName(self, idx):
-        
         return self.member_names[idx]
 
     def getMemberCount(self):
-
         return self.member_names.size()
         
     def HasProperty(self, arg):
@@ -55,10 +46,10 @@ class PyJSAPI(FBXJSAPI):
         prop = getattr(self.wrappedObj, propertyName)
         try:
             value.set(prop)
-        except:
-            return False
+        except RuntimeError as err:
+            return FBXResult(False, str(err))
 
-        return True
+        return FBXResult(True)
 
     def GetProperty(self, arg, value):
         if isinstance(arg, str):
@@ -66,24 +57,22 @@ class PyJSAPI(FBXJSAPI):
         elif isinstance(arg, int):
             return self.GetProperty0(self.member_names[arg], value)
         
-        return False
-        
     def SetProperty0(self, propertyName, value):
         try:
             new_val = ConvertToPy(value)
             setattr(self.wrappedObj, propertyName, new_val)
-        except:
-            return False
+        except RuntimeError as err:
+            return FBXResult(False, str(err))
         
-        return True
+        return FBXResult(True)
 
     def SetProperty(self, arg, value):
+
         if isinstance(arg, str):
             return self.SetProperty0(arg, value)
+
         elif isinstance(arg, int):
             return self.SetProperty0(self.member_names[arg], value)
-
-        return False
 
 
     def HasMethod(self, methodName):
@@ -96,17 +85,24 @@ class PyJSAPI(FBXJSAPI):
             return self.method_names.__contains__(methodName)
 
     def Invoke(self, methodName, args, result):
+        
+        func = getattr(self.wrappedObj, methodName)
 
-        try:
-            func = getattr(self.wrappedObj, methodName)
-            py_args = tuple()
-            for arg in args:
-                py_args.append(ConvertToPy(arg))
+        if func == None:
+            return FBXResult(False, "Could not get function " + str(methodName))
             
+        py_args = []
+        try:
+            for arg in args:
+                pyArg = ConvertToPy(arg)
+                py_args.append(pyArg)
+        except RuntimeError as err:
+            return FBXResult(False, "Could not convert argument " + str(arg) + ": " + str(err))
+                
+        try:
             py_result = apply(func, py_args)
             result.set(py_result)
-        except (RuntimeError, SyntaxError) as err:
-            result.set("Error in method " + str(func) + ": " + str(err))
-            return False
+        except object as err:
+            return FBXResult(False, "Error in method " + str(func)+ ": " + str(err))
         
-        return True
+        return FBXResult(True)

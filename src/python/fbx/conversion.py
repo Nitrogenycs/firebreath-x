@@ -27,12 +27,13 @@ def ConvertToPy(value):
         return value.get_int64()
     elif _type_ ==  "uint64":
         return value.get_uint64()
-    else :
+    else:
         # throw bad cast exception here?
-        return None
+        raise RuntimeError("Unknown type")
 
-    def ConvertFromPy(value):
-        result = fbxvariant()
-        # automatic converted by proxy?
-        result.set(value)
-        return result
+
+def ConvertFromPy(value):
+    result = fbxvariant()
+    # automatic converted by proxy?
+    result.set(value)
+    return result
