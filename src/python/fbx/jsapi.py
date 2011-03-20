@@ -33,20 +33,20 @@ def ConvertToPy(value):
 
 
 def ConvertFromPy(result, value):
-    if (isinstance(value, list) or isinstance(value, dict)):
-        #TODO: here is a problem.
-        # is not delivered to fb correctly. 
-        # -  disown is necessary as the wrapper shall not be managed by 
-        #    python anymore. Ownership goes to the swig proxy
-        # - result is of type fbxvariant
-        # - signature of result.set(): void set(FBXJSAPI* value);
-        jsWrapper = PyJSAPI(value)
-        jsWrapper.__disown__()
-        result.set(jsWrapper)
+    if(value == None):
+        result.set_empty()
         return FBXResult(True)
-    else:
+    elif ( isinstance(value, int) or isinstance(value, float) or isinstance(value, bool) or isinstance(value, str)):
         result.set(value)
         return FBXResult(True)
+    else:
+        try:
+            jsWrapper = PyJSAPI(value)
+            jsWrapper.__disown__()
+            result.set(jsWrapper)
+            return FBXResult(True)
+        except:
+            return FBXResult(False, 'Could not wrap non-primitive type %s'%(str(type(value))))
 
 
 class PyJSAPI(FBXJSAPI):
@@ -164,6 +164,8 @@ class PyJSAPI(FBXJSAPI):
             py_result = apply(func, py_args)
         except object as err:
             return FBXResult(False, "Error in method " + str(func)+ ": " + str(err))
+        except:
+            return FBXResult(False, "Error in method " + str(func))
 
         try:
             ConvertFromPy(result, py_result)
