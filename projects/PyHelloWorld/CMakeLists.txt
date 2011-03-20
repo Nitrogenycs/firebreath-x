@@ -40,10 +40,7 @@ include_platform()
 
 target_link_libraries(${PLUGIN_NAME} fbxlib fbx_py)
 
-add_custom_command(
-    TARGET ${PLUGIN_NAME}
-    PRE_BUILD
-    COMMAND ${PATCH_EXECUTABLE} -t ${FIREBREATH_BINARY_DIR}/projects/${PLUGIN_NAME}/gen/FireBreathWin.def ${FBX_PY_ROOT}/patches/FireBreath.def.patch
-	COMMENT "Patching library export definition file"
-	VERBATIM
+execute_process(
+    #COMMAND ${CMAKE_COMMAND} -E copy ${FIREBREATH_BINARY_DIR}/projects/${PLUGIN_NAME}/gen/FireBreathWin.def.orig ${FIREBREATH_BINARY_DIR}/projects/${PLUGIN_NAME}/gen/FireBreathWin.def
+    COMMAND ${PATCH_EXECUTABLE} ${FIREBREATH_BINARY_DIR}/projects/${PLUGIN_NAME}/gen/FireBreathWin.def ${FBX_PY_ROOT}/patches/FireBreath.def.patch
 )
