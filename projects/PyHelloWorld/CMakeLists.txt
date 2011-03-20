@@ -16,7 +16,7 @@ file (GLOB GENERAL RELATIVE ${CMAKE_CURRENT_SOURCE_DIR}
     [^.]*.cmake
     )
 
-include_directories(${PLUGIN_INCLUDE_DIRS} ${PYTHON_INCLUDE_DIRS})
+include_directories(${PLUGIN_INCLUDE_DIRS} ${PYTHON_INCLUDE_DIRS} ${FBX_ROOT}/src/fbx)
 link_directories(${PYTHON_LIBRARIES})
 
 # Generated files are stored in ${GENERATED} by the project configuration

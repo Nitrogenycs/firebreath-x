@@ -1,4 +1,5 @@
 from FireBreath import *
+from conversion import ConvertToPy
 
 class PyJSAPI(FBXJSAPI):
 
@@ -22,14 +23,11 @@ class PyJSAPI(FBXJSAPI):
                 
         self.method_map = {'constructor': '__init__', 'length': '__len__'}
 
-    def getMemberNames(self, arg=None):
-        if arg == None:
-            return self.member_names
-        else:
-            for m in self.member_names:
-                arg.push_back(m)
-            return True 
+        pass
 
+    def getMemberNames(self):
+        return self.member_names
+    
     def getMemberName(self, idx):
         return self.member_names[idx]
 
@@ -37,23 +35,21 @@ class PyJSAPI(FBXJSAPI):
         return self.member_names.size()
         
     def HasProperty(self, arg):
-        if(True):
-            return False
-
         if isinstance(arg, str):
             return self.property_names.__contains__(arg)
         elif isinstance(arg, int):
             return self.property_names.__contains__(self.member_names[arg])
-        
+
         return False
 
     def GetProperty0(self, propertyName, value):
         prop = getattr(self.wrappedObj, propertyName)
         try:
             value.set(prop)
-        except:
-            return False
-        return True
+        except RuntimeError as err:
+            return FBXResult(False, str(err))
+
+        return FBXResult(True)
 
     def GetProperty(self, arg, value):
         if isinstance(arg, str):
@@ -61,30 +57,25 @@ class PyJSAPI(FBXJSAPI):
         elif isinstance(arg, int):
             return self.GetProperty0(self.member_names[arg], value)
         
-        return False
-        
     def SetProperty0(self, propertyName, value):
         try:
             new_val = ConvertToPy(value)
             setattr(self.wrappedObj, propertyName, new_val)
-        except:
-            return False
+        except RuntimeError as err:
+            return FBXResult(False, str(err))
         
-        return True
+        return FBXResult(True)
 
     def SetProperty(self, arg, value):
+
         if isinstance(arg, str):
             return self.SetProperty0(arg, value)
+
         elif isinstance(arg, int):
             return self.SetProperty0(self.member_names[arg], value)
 
-        return False
-
 
     def HasMethod(self, methodName):
-#        if(True):
-#            return False
-    
         # TODO: there are some methods that must be mapped to python naming
         # "compilation_unit_type"
         # "__proto__"
@@ -94,14 +85,24 @@ class PyJSAPI(FBXJSAPI):
             return self.method_names.__contains__(methodName)
 
     def Invoke(self, methodName, args, result):
-        try:
-            func = getattr(self.wrappedObj, methodName)
-            py_args = tuple()
-            for arg in args:
-                py_args.append(ConvertToPy(arg))
-            py_result = func(py_args)
-            result.set(py_result)
-        except:
-            return False
         
-        return True
+        func = getattr(self.wrappedObj, methodName)
+
+        if func == None:
+            return FBXResult(False, "Could not get function " + str(methodName))
+            
+        py_args = []
+        try:
+            for arg in args:
+                pyArg = ConvertToPy(arg)
+                py_args.append(pyArg)
+        except RuntimeError as err:
+            return FBXResult(False, "Could not convert argument " + str(arg) + ": " + str(err))
+                
+        try:
+            py_result = apply(func, py_args)
+            result.set(py_result)
+        except object as err:
+            return FBXResult(False, "Error in method " + str(func)+ ": " + str(err))
+        
+        return FBXResult(True)

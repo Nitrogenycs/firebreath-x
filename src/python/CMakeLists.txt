@@ -42,8 +42,12 @@ if(WIN32)
 endif()
 	
 set(FBX_SOURCES 
-	${CMAKE_CURRENT_SOURCE_DIR}/../fbx/FBXVariant.cpp
-	${CMAKE_CURRENT_SOURCE_DIR}/../fbx/FBXJSAPI.cpp)
+	../fbx/FBXVariant.cpp
+	../fbx/FBXJSAPIWrapper.cpp
+	../fbx/JSAPIWrapper.cpp
+    ../fbx/FBXJSAPI.cpp
+    ../fbx/FBXResult.cpp
+)
 add_library(fbxlib ${FBX_SOURCES})
 
 link_directories(${PYTHON_LIBRARIES})
