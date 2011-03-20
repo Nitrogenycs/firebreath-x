@@ -50,8 +50,8 @@
         function loadExtension()
         {
             var path = 'C:\\DCSDK\\External\\WebPlayer\\firebreath-x\\src\\csharp\\makefiles\\SimpleTest\\bin\\Release\\SimpleTest.dll';
-            var klass = 'TestApp.TestApp';
-            var method = 'createJSAPI';
+            var klass = 'TestApp.Launcher';
+            var method = 'launch';
             var options = 'Hello hello';
             var result = plugin().loadExtension(path, klass, method, options);
             
@@ -165,13 +165,13 @@
                 alert('Some tests had errors');
             }
             
+            // todo: remove memory leaks
+            // todo: unload assembly via AppDomain.Unload(domain). But what triggers this?
+            //         When rootApi gone? Might not be sufficient if something still requires the AppDomain that's in some other jsapi. Manually call Unload?
             // todo: add support for method objects
             // todo: DeleteProperty. Constructor with new.
-            // todo: remove potential memory leaks
-            // todo: unload assembly http://msdn.microsoft.com/de-de/library/ms173101(v=VS.100).aspx
             // todo: dynamic on c# side to access js properties
-            // todo: make host run in separate thread?
-            // todo: security checks
+            // todo: security checks for loaded dll
 
         }
     </script>

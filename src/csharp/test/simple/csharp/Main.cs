@@ -68,19 +68,21 @@ namespace TestApp
         }
     }
 
-    class TestApp
+    public class TestApp
     {
-        public static Globals globals = new Globals();
-        public static ObjectJSAPI rootApi = new ObjectJSAPI(globals);
-        public static FBXJSAPI context;
-        public static string options;
+        public Globals globals;
+        public ObjectJSAPI rootApi;
+        public FBXJSAPI context;
+        public string options;
 
-        public static int createJSAPI(string entryInfo)
+        public TestApp(string entryInfo)
         {
-            AppDomain currentDomain = AppDomain.CurrentDomain;
-            currentDomain.UnhandledException += new UnhandledExceptionEventHandler(UnhandledExceptionHandler);
+            AppDomain.CurrentDomain.UnhandledException += new UnhandledExceptionEventHandler(UnhandledExceptionHandler);
+
+            globals = new Globals();
+            rootApi = new ObjectJSAPI(globals);
+
             FireBreath.Startup.initialize(entryInfo, rootApi, out context, out options);
-            return 0;
         }
 
         static void UnhandledExceptionHandler(object sender, UnhandledExceptionEventArgs args)
@@ -89,6 +91,5 @@ namespace TestApp
             MessageBox.Show(e.ToString(), "C# plugin error", MessageBoxButtons.OK, MessageBoxIcon.Error);
         }
     }
-
 
 }
