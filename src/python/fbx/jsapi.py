@@ -1,5 +1,53 @@
 from FireBreath import *
-from conversion import ConvertToPy
+
+def ConvertToPy(value):
+    _type_ = value.get_type()
+    
+    if _type_ == "bool":
+        return value.get_bool()
+    elif _type_ == "int":
+        return value.get_int()
+    elif _type_ == "uint":
+        return value.get_uint()
+    elif _type_ == "double":
+        return value.get_double()
+    elif _type_ == "float":
+        return value.get_float()
+    elif _type_ == "wstring":
+        return value.get_wstring()
+    elif _type_ ==  "short":
+        return value.get_short()
+    elif _type_ ==  "ushort":
+        return value.get_ushort()
+    elif _type_ ==  "char":
+        return value.get_char()
+    elif _type_ ==  "uchar":
+        return value.get_uchar()
+    elif _type_ ==  "int64":
+        return value.get_int64()
+    elif _type_ ==  "uint64":
+        return value.get_uint64()
+    else:
+        # throw bad cast exception here?
+        raise RuntimeError("Unknown type")
+
+
+def ConvertFromPy(result, value):
+    if (isinstance(value, list) or isinstance(value, dict)):
+        #TODO: here is a problem.
+        # is not delivered to fb correctly. 
+        # -  disown is necessary as the wrapper shall not be managed by 
+        #    python anymore. Ownership goes to the swig proxy
+        # - result is of type fbxvariant
+        # - signature of result.set(): void set(FBXJSAPI* value);
+        jsWrapper = PyJSAPI(value)
+        jsWrapper.__disown__()
+        result.set(jsWrapper)
+        return FBXResult(True)
+    else:
+        result.set(value)
+        return FBXResult(True)
+
 
 class PyJSAPI(FBXJSAPI):
 
@@ -21,7 +69,7 @@ class PyJSAPI(FBXJSAPI):
             else:
                 self.property_names.add(m)
                 
-        self.method_map = {'constructor': '__init__', 'length': '__len__'}
+        self.method_map = {'constructor': '__init__', 'length': '__len__', 'toString': '__str__'}
 
         pass
 
@@ -43,7 +91,13 @@ class PyJSAPI(FBXJSAPI):
         return False
 
     def GetProperty0(self, propertyName, value):
+        
         prop = getattr(self.wrappedObj, propertyName)
+        
+        if(prop == None):
+            value.set_empty()
+            return FBXResult(False, "Tried to access non existing property: %s"%(propertyName))
+        
         try:
             value.set(prop)
         except RuntimeError as err:
@@ -58,6 +112,10 @@ class PyJSAPI(FBXJSAPI):
             return self.GetProperty0(self.member_names[arg], value)
         
     def SetProperty0(self, propertyName, value):
+
+        if not self.HasProperty(propertyName):
+            return FBXResult(False, "Tried to set non existing property: %s"%(propertyName))
+
         try:
             new_val = ConvertToPy(value)
             setattr(self.wrappedObj, propertyName, new_val)
@@ -85,7 +143,10 @@ class PyJSAPI(FBXJSAPI):
             return self.method_names.__contains__(methodName)
 
     def Invoke(self, methodName, args, result):
-        
+
+        if self.method_map.__contains__(methodName):
+            methodName = self.method_map[methodName];
+            
         func = getattr(self.wrappedObj, methodName)
 
         if func == None:
@@ -101,8 +162,12 @@ class PyJSAPI(FBXJSAPI):
                 
         try:
             py_result = apply(func, py_args)
-            result.set(py_result)
         except object as err:
             return FBXResult(False, "Error in method " + str(func)+ ": " + str(err))
+
+        try:
+            ConvertFromPy(result, py_result)
+        except object as err:
+            return FBXResult(False, "Could not convert result of method " + str(func)+ ": " + str(err))
         
         return FBXResult(True)
