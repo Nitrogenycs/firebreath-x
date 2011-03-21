@@ -30,6 +30,11 @@ namespace TestApp
             get { return this._value; }
             set { this._value = value;  }
         }
+
+        public string testMethodObject()
+        {
+            return changeThis;
+        }
     }
 
     public class Globals

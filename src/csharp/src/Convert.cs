@@ -109,20 +109,4 @@ namespace FireBreath
     }
 
 
-    public class MethodCall
-    {
-        object obj;
-        MethodInfo info;
-
-        public MethodCall(object Obj, MethodInfo Info)
-        {
-            obj = Obj;
-            info = Info;
-        }
-
-        public Object call(object[] parameters)
-        {
-            return info.Invoke(obj, parameters);
-        }
-    }
 }

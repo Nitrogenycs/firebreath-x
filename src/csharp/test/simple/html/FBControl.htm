@@ -122,10 +122,6 @@
                 // creating a new instance of an object (doesn't use 'new')
                 var newObject = result.someType();
                 
-                // creating and calling a method object
-                // var func = result.run;
-                // func();
-                
                 // setting property
                 assertVal( newObject, 'changeThis', '123' );
                 newObject.changeThis = '234';
@@ -156,6 +152,14 @@
                 objA.staticInt = 234;
                 assertVal( objA, 'staticInt', 234 );
                 assertVal( objB, 'staticInt', 234 );
+                
+                // method objects
+                var obj = result.someType();
+                obj.changeThis = '100';
+                assertVal( obj, 'changeThis', '100' );
+                var func = obj.testMethodObject;
+                var result = func();
+                assert( result == '100', 'Method object error' );
 
                 alert('All tests completed successfully');
             }
@@ -172,6 +176,7 @@
             // todo: DeleteProperty. Constructor with new.
             // todo: dynamic on c# side to access js properties
             // todo: security checks for loaded dll
+            // todo: create different JSAPI classes for objects, method objects, types and everything else that's special-cased atm
 
         }
     </script>

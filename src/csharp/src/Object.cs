@@ -114,9 +114,9 @@ namespace FireBreath
                 return obj.ConvertFromNet(value);
             }
 
-            /*MethodInfo method = type.GetMethod(propertyName);
+            MethodInfo method = type.GetMethod(propertyName);
             if (method != null)
-                return (new MethodCall(this.wrappedObject, method)).ConvertFromNet(value);*/
+                return (new MethodObject(this.wrappedObject, method)).ConvertFromNet(value);
 
             FBXResult result = GetIndexedProperty(propertyName, value);
             if (!result.success)
@@ -220,7 +220,8 @@ namespace FireBreath
         public override bool HasMethod(string methodName)
         {
             //MessageBox.Show("HasMethod " + methodName);
-            return type.GetMethod(methodName) != null;
+            return false;
+            //return type.GetMethod(methodName) != null;
         }
 
         public override FBXResult Invoke(string methodName, VariantVector args, fbxvariant result)
@@ -262,6 +263,10 @@ namespace FireBreath
                         return newObject.ConvertFromNet(result);
                     }
                 }
+                else if (this.wrappedObject is MethodObject)
+                {
+                    return ((MethodObject)this.wrappedObject).call(arguments).ConvertFromNet(result);
+                }
                 return new FBXResult(false, "Method '" + methodName + "' not callable");
                 //((MethodCall)this.wrappedObject).call(arguments).ConvertFromNet(result);
             }
@@ -288,6 +293,22 @@ namespace FireBreath
         }
     }
     
+    public class MethodObject
+    {
+        object obj;
+        MethodInfo info;
+
+        public MethodObject(object Obj, MethodInfo Info)
+        {
+            obj = Obj;
+            info = Info;
+        }
+
+        public object call(object[] parameters)
+        {
+            return info.Invoke(obj, parameters);
+        }
+    }
 }
 
 
