@@ -70,7 +70,7 @@ namespace FireBreath
                 {
                     return new FBXResult(false, e.ToString());
                 }
-                return obj.ConvertFromNet(value);
+                return Converter.FromNet(obj, value);
             }
             // need to check if this.wrappedObject can be indexed directly?
             return new FBXResult(false, "Property '" + idx + "' not found");
@@ -97,7 +97,7 @@ namespace FireBreath
                 {
                     return new FBXResult(false, e.ToString());
                 }
-                return obj.ConvertFromNet(value);
+                return Converter.FromNet(obj, value);
             }
 
             PropertyInfo property = type.GetProperty(propertyName);
@@ -111,12 +111,12 @@ namespace FireBreath
                 {
                     return new FBXResult(false, e.ToString());
                 }
-                return obj.ConvertFromNet(value);
+                return Converter.FromNet(obj, value);
             }
 
             MethodInfo method = type.GetMethod(propertyName);
             if (method != null)
-                return (new MethodObject(this.wrappedObject, method)).ConvertFromNet(value);
+                return Converter.FromNet( new MethodObject(this.wrappedObject, method), value );
 
             FBXResult result = GetIndexedProperty(propertyName, value);
             if (!result.success)
@@ -156,7 +156,7 @@ namespace FireBreath
         public override FBXResult SetProperty(int idx, fbxvariant value)
         {
             object result;
-            FBXResult returnValue = value.ConvertToNet(out result);
+            FBXResult returnValue = Converter.ToNet( value, targetType, out result);
             if (!returnValue.success)
                 return returnValue;
 
@@ -166,7 +166,7 @@ namespace FireBreath
         public override FBXResult SetProperty(string propertyName, fbxvariant value)
         {
             object convertedValue;
-            FBXResult returnValue = value.ConvertToNet(out convertedValue);
+            FBXResult returnValue = Converter.ToNet(value, targetType, out convertedValue);
             if (!returnValue.success)
                 return returnValue;
 
@@ -231,7 +231,7 @@ namespace FireBreath
             foreach( fbxvariant arg in args )
             {
                 object converted;
-                FBXResult returnValue = arg.ConvertToNet(out converted);
+                FBXResult returnValue = Converter.ToNet( arg, targetType, out converted );
                 if (!returnValue.success)
                     return returnValue;
                 convertedArgs.Add(converted);
@@ -243,6 +243,7 @@ namespace FireBreath
                 //MessageBox.Show("InvokeConstructor " + (this.wrappedObject is Type));
                 if (this.wrappedObject is Type)
                 {
+                    // todo: get types from constructor parameters and find best matching convertedArgs
                     System.Collections.Generic.List<Type> types = new System.Collections.Generic.List<Type>();
                     foreach (object arg in arguments)
                     {
@@ -260,12 +261,12 @@ namespace FireBreath
                         {
                             return new FBXResult(false, e.ToString());
                         }
-                        return newObject.ConvertFromNet(result);
+                        return Converter.FromNet( newObject, result );
                     }
                 }
                 else if (this.wrappedObject is MethodObject)
                 {
-                    return ((MethodObject)this.wrappedObject).call(arguments).ConvertFromNet(result);
+                    return Converter.FromNet( ((MethodObject)this.wrappedObject).call(arguments), result );
                 }
                 return new FBXResult(false, "Method '" + methodName + "' not callable");
                 //((MethodCall)this.wrappedObject).call(arguments).ConvertFromNet(result);
@@ -285,7 +286,7 @@ namespace FireBreath
                     {
                         return new FBXResult(false, e.ToString());
                     }
-                    return methodResult.ConvertFromNet(result);
+                    return Converter.FromNet( methodResult, result );
                 }
             }
 

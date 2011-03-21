@@ -160,6 +160,20 @@
                 var func = obj.testMethodObject;
                 var result = func();
                 assert( result == '100', 'Method object error' );
+                
+                // out parameters (todo)
+                var outResult = obj.testOutParameter();
+                assertVal( outResult, 0, '123' );
+                assertVal( outResult, 1, 456 );
+                
+                // compare sequences (todo)
+                assert( outResult == ['123', 456], 'Sequences do not match' );
+                assert( outResult.Equals(['123', 456]), 'Sequences do not match' );
+
+                // passing complex objects around (todo)
+                var myJSImplementation = { message : 'hey from js' };
+                assert( obj.testComplexObject( myJSImplementation ) == 'hey from js', 'Complex objects error' );
+                assertRaises( function() { obj.testComplexObject( { i_have_no_message : '123' ) }; );
 
                 alert('All tests completed successfully');
             }

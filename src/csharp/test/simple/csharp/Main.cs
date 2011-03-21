@@ -31,10 +31,26 @@ namespace TestApp
             set { this._value = value;  }
         }
 
+        public string testOutParameter(out int result)
+        {
+            result = 456;
+            return "123";
+        }
+
         public string testMethodObject()
         {
             return changeThis;
         }
+
+        public string testComplexObject(ImplementMe obj)
+        {
+            return obj.message;
+        }
+    }
+
+    public class ImplementMe
+    {
+        public string message = "This should never appear";
     }
 
     public class Globals
