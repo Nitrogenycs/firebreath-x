@@ -241,13 +241,15 @@ FB::variant PyHelloWorldAPI::hello_py_extension() {
 
     pSwigObj = PyObject_GetAttrString(pJsApi, "this");
 
+    // this is the director's disown: shifting ownership from py to c++
+    pSwigObjDisOwnFunc = PyObject_GetAttrString(pJsApi, "__disown__");
+
     if (pSwigObj == NULL) {
         result = FB::variant("Could not access SwigObject.");
         goto return_result;
     }
 
     pSwigObjLongFunc = PyObject_GetAttrString(pSwigObj, "__long__");
-    pSwigObjDisOwnFunc = PyObject_GetAttrString(pSwigObj, "disown");
 
     if (pSwigObjLongFunc == NULL) {
         result = FB::variant("no method '__long__()'");
@@ -256,7 +258,8 @@ FB::variant PyHelloWorldAPI::hello_py_extension() {
 
     pArgs = PyTuple_New(0);
     pSwigObjPtr = PyObject_CallObject(pSwigObjLongFunc, pArgs);
-//    PyObject_CallObject(pSwigObjDisOwnFunc, pArgs);
+    // shift ownership to c++
+    PyObject_CallObject(pSwigObjDisOwnFunc, pArgs);
     Py_DECREF(pArgs);
 
     if (pSwigObjPtr == NULL) {

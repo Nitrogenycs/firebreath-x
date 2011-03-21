@@ -17,34 +17,34 @@ endforeach(flag_var)
 endif()
 
 set(FIREBREATH_INCLUDE_DIRS 
-		${FIREBREATH_ROOT}/src/ScriptingCore
-		${FIREBREATH_ROOT}/src/config
+        ${FIREBREATH_ROOT}/src/ScriptingCore
+        ${FIREBREATH_ROOT}/src/config
 )
 
 set (FBPY_MODULE_NAME FireBreath)
 
-	# set(CMAKE_C_FLAGS ${CMAKE_C_FLAGS} /MT)
-	# set(CMAKE_C_FLAGS_RELEASE "${CMAKE_C_FLAGS_RELEASE}" /MT)
-	# set(CMAKE_C_FLAGS_DEBUG "${CMAKE_C_FLAGS_RELEASE}" /MT)
-	# set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE}" /MT)
-	# set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_RELEASE}" /MT)
+    # set(CMAKE_C_FLAGS ${CMAKE_C_FLAGS} /MT)
+    # set(CMAKE_C_FLAGS_RELEASE "${CMAKE_C_FLAGS_RELEASE}" /MT)
+    # set(CMAKE_C_FLAGS_DEBUG "${CMAKE_C_FLAGS_RELEASE}" /MT)
+    # set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE}" /MT)
+    # set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_RELEASE}" /MT)
 
 include_directories(
-					${BOOST_ROOT}
-					${PYTHON_INCLUDE_DIRS} 
-					${CMAKE_CURRENT_SOURCE_DIR}/../fbx 
-					${CMAKE_CURRENT_BINARY_DIR}/fbx
-					${FIREBREATH_INCLUDE_DIRS}
+                    ${BOOST_ROOT}
+                    ${PYTHON_INCLUDE_DIRS} 
+                    ${CMAKE_CURRENT_SOURCE_DIR}/../fbx 
+                    ${CMAKE_CURRENT_BINARY_DIR}/fbx
+                    ${FIREBREATH_INCLUDE_DIRS}
 )
 
 if(WIN32)
-	add_definitions(-DFB_WIN)
+    add_definitions(-DFB_WIN)
 endif()
-	
+    
 set(FBX_SOURCES 
-	../fbx/FBXVariant.cpp
-	../fbx/FBXJSAPIWrapper.cpp
-	../fbx/JSAPIWrapper.cpp
+    ../fbx/FBXVariant.cpp
+    ../fbx/FBXJSAPIWrapper.cpp
+    ../fbx/JSAPIWrapper.cpp
     ../fbx/FBXJSAPI.cpp
     ../fbx/FBXResult.cpp
 )
@@ -68,15 +68,15 @@ configure_file(${FBX_PY_ROOT}/patches/FireBreath.py.patch ${CMAKE_CURRENT_BINARY
 
 add_custom_command(
     OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/fbx/${FBPY_MODULE_NAME}_py_wrap.cpp
-	COMMAND ${SWIG_EXE} -c++ -python 
-						-outdir ${CMAKE_CURRENT_BINARY_DIR}/fbx 
-						-o ${CMAKE_CURRENT_BINARY_DIR}/fbx/${FBPY_MODULE_NAME}_py_wrap.cpp 
-						${CMAKE_CURRENT_SOURCE_DIR}/../fbx/FireBreath.i
+    COMMAND ${SWIG_EXE} -c++ -python 
+                        -outdir ${CMAKE_CURRENT_BINARY_DIR}/fbx 
+                        -o ${CMAKE_CURRENT_BINARY_DIR}/fbx/${FBPY_MODULE_NAME}_py_wrap.cpp 
+                        ${CMAKE_CURRENT_SOURCE_DIR}/../fbx/FireBreath.i
     # NOTE: Here the python FireBreath module is patched:
     COMMAND ${PATCH_EXECUTABLE} ${CMAKE_CURRENT_BINARY_DIR}/fbx/FireBreath.py ${CMAKE_CURRENT_BINARY_DIR}/FireBreath.py.${PLUGIN_NAME}.patch 
     DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/../fbx/FireBreath.i ${CMAKE_CURRENT_SOURCE_DIR}/../fbx/FBXVariant.h
-	COMMENT "Generating python wrapper for firebreath"
-	VERBATIM
+    COMMENT "Generating python wrapper for firebreath"
+    VERBATIM
 )
 
 add_library(fbx_py ${CMAKE_CURRENT_BINARY_DIR}/fbx/${FBPY_MODULE_NAME}_py_wrap.cpp)
@@ -86,6 +86,6 @@ add_custom_target(install_fbx
     COMMAND ${CMAKE_COMMAND} -E copy ${CMAKE_CURRENT_SOURCE_DIR}/setup.py ${CMAKE_CURRENT_BINARY_DIR}
     COMMAND ${CMAKE_COMMAND} -E copy_directory ${CMAKE_CURRENT_SOURCE_DIR}/fbx ${CMAKE_CURRENT_BINARY_DIR}/fbx
     COMMAND ${CMAKE_COMMAND} -E copy_directory ${CMAKE_CURRENT_SOURCE_DIR}/fbx/example ${CMAKE_CURRENT_BINARY_DIR}/fbx/example
-	COMMAND ${PYTHON_EXECUTABLE} ${CMAKE_CURRENT_BINARY_DIR}/setup.py install
-	COMMENT "Intalling firebreath.py to python site-packages"
+    COMMAND ${PYTHON_EXECUTABLE} ${CMAKE_CURRENT_BINARY_DIR}/setup.py install
+    COMMENT "Intalling firebreath.py to python site-packages"
 )
