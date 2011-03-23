@@ -1,4 +1,60 @@
 from FireBreath import *
+    
+def jsMethodWrapper(jsapiObj, name):
+    try:
+        def _func(*pyArgs):
+            result = fbxvariant()
+            jsArgs = VariantVector()
+            for arg in pyArgs:
+                jsArgs.push_back(ConvertFromPy(arg))
+            jsapiObj.Invoke(name, jsArgs, result)
+            return ConvertToPy(result)
+        return _func
+    except:
+        raise RuntimeError("Could not wrap method %s"%(name))
+
+class JSDirector(object):
+    def __init__(self, obj):
+        members = {}
+        memberNames = obj.getMemberNames()
+        for name in memberNames:
+            if obj.HasMethod(name):
+                members[name] = jsMethodWrapper(obj, name)
+            else:
+                members[name] = None
+                
+        object.__setattr__(self, 'jsapiObj', obj)
+        object.__setattr__(self, 'members', members)
+
+    def __getattr__(self, name):
+        if not self.__dict__['members'].__contains__(name):
+            raise AttributeError("Missing attribute %s"%(name))
+        
+        if self.__dict__['members'][name] == None:
+            jsProp = fbxvariant()
+            fbxresult = self.__dict__['jsapiObj'].GetProperty(name, jsProp)
+            if not fbxresult.success:
+                raise RuntimeError("Error in get_%s: %d"%(name, err))
+            return ConvertToPy(jsProp)
+        else:
+            # then it is a method wrapper
+            return self.__dict__['members'][name]
+        
+    def __setattr__(self, name, value):
+        if not self.__dict__['members'].__contains__(name):
+            raise AttributeError("Missing attribute %s"%(name))
+        
+        if self.__dict__['members'][name] == None:
+            jsProp = fbxvariant()
+            ConvertFromPy(jsProp, value)
+            fbxresult = self.__dict__['jsapiObj'].SetProperty(name, jsProp)
+            if not fbxresult.success:
+                raise RuntimeError("Error in set_%s: %d"%(name, err))
+        else:
+            raise RuntimeError('Director methods are read only')
+
+        return None
+    
 
 def ConvertToPy(value):
     _type_ = value.get_type()
@@ -27,10 +83,18 @@ def ConvertToPy(value):
         return value.get_int64()
     elif _type_ ==  "uint64":
         return value.get_uint64()
+    elif _type_ ==  "object" or _type_ == "jsapi":
+        try:
+            jsapiObj = value.get_object()
+            return JSDirector(jsapiObj)
+        except SyntaxError as syntaxErr:
+            raise RuntimeError("SyntaxError: %s"%(str(syntaxErr)))
+        except AttributeError as attErr:
+            raise RuntimeError("Error: %s"%(str(attErr)))
+        except:
+            raise RuntimeError("Error: could not convert js object")
     else:
-        # throw bad cast exception here?
-        raise RuntimeError("Unknown type")
-
+        raise RuntimeError("Unknown type: %s"%(_type_))
 
 def ConvertFromPy(result, value):
     if(value == None):
@@ -48,6 +112,16 @@ def ConvertFromPy(result, value):
         except:
             return FBXResult(False, 'Could not wrap non-primitive type %s'%(str(type(value))))
 
+class PyExtension():
+    
+    def __init__(self, pluginObj):
+        self.pluginObj = pluginObj
+        
+    def getPlugin(self):
+        return self.pluginObj
+
+    def analyze(self, val):
+        return str(val.__dict__)
 
 class PyJSAPI(FBXJSAPI):
 
@@ -58,11 +132,11 @@ class PyJSAPI(FBXJSAPI):
         
         self.member_names = StringVector()
 
-        self.dict = wrappedObj.__class__.__dict__
+        self.dir = dir(wrappedObj)
         self.property_names = set()
         self.method_names = set()
         
-        for m in self.dict.keys():
+        for m in self.dir:
             self.member_names.append(m)
             if callable(getattr(wrappedObj, m)):
                 self.method_names.add(m)
@@ -72,7 +146,7 @@ class PyJSAPI(FBXJSAPI):
         self.method_map = {'constructor': '__init__', 'length': '__len__', 'toString': '__str__'}
 
         pass
-
+    
     def getMemberNames(self):
         return self.member_names
     
@@ -102,6 +176,8 @@ class PyJSAPI(FBXJSAPI):
             value.set(prop)
         except RuntimeError as err:
             return FBXResult(False, str(err))
+        except:
+            return FBXResult(False, "Could not get property %s"%(propertyName))
 
         return FBXResult(True)
 
@@ -121,6 +197,8 @@ class PyJSAPI(FBXJSAPI):
             setattr(self.wrappedObj, propertyName, new_val)
         except RuntimeError as err:
             return FBXResult(False, str(err))
+        except:
+            return FBXResult(False, "Could not set property %s"%(propertyName))
         
         return FBXResult(True)
 
@@ -146,6 +224,9 @@ class PyJSAPI(FBXJSAPI):
 
         if self.method_map.__contains__(methodName):
             methodName = self.method_map[methodName];
+        
+        if not self.method_names.__contains__(methodName):
+            return FBXResult(False, "Instance %s has no method %s.\n Available methods: %s"%(str(self.wrappedObj), str(methodName), str(self.method_names)))
             
         func = getattr(self.wrappedObj, methodName)
 
@@ -159,17 +240,34 @@ class PyJSAPI(FBXJSAPI):
                 py_args.append(pyArg)
         except RuntimeError as err:
             return FBXResult(False, "Could not convert argument " + str(arg) + ": " + str(err))
-                
+        except: 
+            return FBXResult(False, "Could not convert argument " + str(arg))
+        
         try:
             py_result = apply(func, py_args)
-        except object as err:
+        except RuntimeError as err:
             return FBXResult(False, "Error in method " + str(func)+ ": " + str(err))
         except:
-            return FBXResult(False, "Error in method " + str(func))
+            return FBXResult(False, "Error during call of method %s. Tried: apply(%s, %s)"%(methodName, str(func), str(py_args)))
 
         try:
             ConvertFromPy(result, py_result)
-        except object as err:
+        except RuntimeError as err:
             return FBXResult(False, "Could not convert result of method " + str(func)+ ": " + str(err))
+        except: 
+            return FBXResult(False, "Could not convert result of method " + str(func))
         
         return FBXResult(True)
+
+
+#if __name__ == '__main__':
+#        
+#        bla = object()
+#        jsapi = PyJSAPI(bla)
+#        jsval = fbxvariant()
+#        jsval.set(jsapi)
+#        pyval = ConvertToPy(jsval)
+#        print(pyval.bla())
+#        pyval.x = 42
+#        print("x=%d"%(pyval.x))
+        

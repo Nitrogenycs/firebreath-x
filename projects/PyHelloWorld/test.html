@@ -24,7 +24,7 @@
         
 		function test()
 		{
-			return plugin0().getHelloPyExtension();
+			return 
 		}
 				
         function load()
@@ -35,13 +35,25 @@
 			
         }
 		
-		var ext;
-
-        function pluginLoaded() {
-            alert("Plugin loaded!");
-			ext = test();
+        function callMe() {
+            alert('Yepeeeeh');
         }
         
+		var ext;
+        var p;
+        var v;
+
+        function pluginLoaded() {
+            //alert("Plugin loaded!");
+			ext = plugin0().getHelloPyExtension();
+            p = ext.getPlugin()
+            v = {'prop1': 1, 'f1': callMe}
+        }
+        
+        function dict_test() {
+            return p.dict_method({"bla":1})
+        }
+                       
         function addTestEvent()
         {
             addEvent(plugin(), 'fired', function(x){
@@ -58,6 +70,34 @@
         {
             alert(plugin().valid);
         }
+        
+        function Mammal(name){ 
+            this.name=name;
+            this.offspring=[];
+        } 
+        Mammal.prototype.haveABaby=function(){ 
+            var newBaby=new Mammal("Baby "+this.name);
+            this.offspring.push(newBaby);
+            return newBaby;
+        } 
+        Mammal.prototype.toString=function(){ 
+            return '[Mammal "'+this.name+'"]';
+        } 
+
+
+        Cat.prototype = new Mammal();        // Here's where the inheritance occurs 
+        Cat.prototype.constructor=Cat;       // Otherwise instances of Cat would have a constructor of Mammal 
+        function Cat(name){ 
+            this.name=name;
+        } 
+        Cat.prototype.toString=function(){ 
+            return '[Cat "'+this.name+'"]';
+        } 
+
+
+        var someAnimal = new Mammal('Mr. Biggles');
+        var myPet = new Cat('Felix');
+
     </script>
 <body onload="load()">
 

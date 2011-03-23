@@ -78,8 +78,11 @@ void fbxvariant::set(const FB::variant& Var)
     type_entry(unsigned long long, uint64)
     type_entry(FB::FBVoid(), empty)
     type_entry(FB::FBNull(), null)
-    type_entry(FB::JSAPIPtr, object)
-    if (*varType == typeid(std::string)) {
+//    type_entry(FB::JSAPIPtr, object)
+    if (Var.can_be_type<FB::JSAPIPtr>()) {
+        var = Var.convert_cast<FB::JSAPIPtr>();
+        type = "object";
+    } else if (*varType == typeid(std::string)) {
         var = FB::utf8_to_wstring(Var.cast<std::string>());
         type = "wstring";
     } else 
