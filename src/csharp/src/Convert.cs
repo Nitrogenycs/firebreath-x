@@ -4,14 +4,14 @@ using System.Reflection;
 
 namespace FireBreath
 {
-    public static class Convert
+    public class Converter
     {
         // todo: refactor this into one function
-        public static FBXResult ConvertToNet(this fbxvariant value,  out Object result)
+        public static FBXResult ToNet(fbxvariant value, Type targetType, out Object result)
         {
             try
             {
-                result = ConvertToNet2(value);
+                result = ToNet2(value, targetType);
             }
             catch (InvalidCastException e)
             {
@@ -21,7 +21,7 @@ namespace FireBreath
             return FBXResult.successful;
         }
 
-        public static Object ConvertToNet2(this fbxvariant value)
+        public static Object ToNet2(fbxvariant value, Type targetType)
         {
             switch (value.get_type())
             {
@@ -34,7 +34,7 @@ namespace FireBreath
                 case "double":
                     {
                         Double v = value.get_double();
-                        if (v == (int)v) return (int)v;
+                        if (targetType.IsAssignableFrom(typeof(int)) && (v == (int)v)) return (int)v;
                         return v;
                     }
                 case "float":
@@ -65,7 +65,7 @@ namespace FireBreath
             throw new InvalidCastException("Cannot cast object of type '" + value.get_type() + "'");
         }
 
-        public static FBXResult ConvertFromNet(this Object value, fbxvariant result)
+        public static FBXResult FromNet(Object value, fbxvariant result)
         {
             if (value is bool)
                 result.set((bool)value);
@@ -109,20 +109,4 @@ namespace FireBreath
     }
 
 
-    public class MethodCall
-    {
-        object obj;
-        MethodInfo info;
-
-        public MethodCall(object Obj, MethodInfo Info)
-        {
-            obj = Obj;
-            info = Info;
-        }
-
-        public Object call(object[] parameters)
-        {
-            return info.Invoke(obj, parameters);
-        }
-    }
 }
