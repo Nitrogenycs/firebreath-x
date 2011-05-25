@@ -77,6 +77,35 @@ FBXResult FBXJSAPIWrapper::GetProperty(const std::string& propertyName, fbxvaria
     return FBXResult::successful;
 }
 
+FBXResult FBXJSAPIWrapper::RemoveProperty(int idx) 
+{
+    try
+    {
+        if ( wrapped->RemoveProperty( idx ) )
+            return FBXResult::successful;
+        else
+            return FBXResult(false);
+    }
+    catch (FB::script_error& e)
+    {
+        return FBXResult(false, "Error removing property '" + boost::lexical_cast<std::string>(idx) + "'. Reason: " + e.what());
+    }
+}
+
+FBXResult FBXJSAPIWrapper::RemoveProperty(const std::string& propertyName) 
+{
+    try
+    {
+        if ( wrapped->RemoveProperty( propertyName ) )
+            return FBXResult::successful;
+        else
+            return FBXResult(false);
+    }
+    catch (FB::script_error& e)
+    {
+        return FBXResult(false, "Error removing property '" + propertyName + "'. Reason: " + e.what());
+    }
+}
 
 bool FBXJSAPIWrapper::HasProperty(int idx) const
 {
@@ -108,6 +137,26 @@ FBXResult FBXJSAPIWrapper::Invoke(const std::string& methodName, const std::vect
     catch (FB::script_error& e)
     {
         return FBXResult(false, "Error invoking method '" + methodName + "'. Reason: " + e.what());
+    }
+    returnValue.set( value );
+    return FBXResult::successful;
+}
+
+FBXResult FBXJSAPIWrapper::Construct(const std::vector<fbxvariant>& args, fbxvariant& returnValue)
+{
+    std::vector<FB::variant> fbArgs(args.size());
+    for ( size_t i = 0; i < args.size(); i++ ) {
+        fbArgs[i] = args[i].get_variant();
+    }
+
+    FB::variant value;
+    try
+    {
+        value = wrapped->Construct(fbArgs);
+    }
+    catch (FB::script_error& e)
+    {
+        return FBXResult(false, std::string("Error invoking constructor. Reason: ") + e.what());
     }
     returnValue.set( value );
     return FBXResult::successful;

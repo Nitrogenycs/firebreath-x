@@ -1,6 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Reflection;
+using System.Linq;
+using System.Linq.Expressions;
 
 namespace FireBreath
 {
@@ -26,45 +28,93 @@ namespace FireBreath
             switch (value.get_type())
             {
                 case "bool":
-                    return value.get_bool();
+                    if ( targetType.IsAssignableFrom(typeof(bool)) )
+                        return value.get_bool();
+                    break;
                 case "int":
-                    return value.get_int();
+                    if (targetType.IsAssignableFrom(typeof(int)))
+                        return value.get_int();
+                    break;
                 case "uint":
-                    return value.get_uint();
+                    if (targetType.IsAssignableFrom(typeof(uint)))
+                        return value.get_uint();
+                    break;
                 case "double":
                     {
                         Double v = value.get_double();
-                        if (targetType.IsAssignableFrom(typeof(int)) && (v == (int)v)) return (int)v;
+                        if (targetType.IsAssignableFrom(typeof(double)))
+                        {
+                            return v;
+                        }
+                        if (targetType.IsAssignableFrom(typeof(int)) && (v == (int)v))
+                        {
+                            return (int)v;
+                        }
+                    }
+                    break;
+                case "float":
+                    if (targetType.IsAssignableFrom(typeof(float)))
+                        return value.get_float();
+                    break;
+                case "wstring":
+                    if (targetType.IsAssignableFrom(typeof(string)))
+                        return value.get_wstring();
+                    break;
+                case "short":
+                    if (targetType.IsAssignableFrom(typeof(short)))
+                        return value.get_short();
+                    break;
+                case "ushort":
+                    if (targetType.IsAssignableFrom(typeof(ushort)))
+                        return value.get_ushort();
+                    break;
+                case "char":
+                    if (targetType.IsAssignableFrom(typeof(char)))
+                        return value.get_char();
+                    break;
+                case "uchar":
+                    if (targetType.IsAssignableFrom(typeof(byte)))
+                        return value.get_uchar();
+                    break;
+                case "int64":
+                    if (targetType.IsAssignableFrom(typeof(Int64)))
+                        return value.get_int64();
+                    break;
+                case "uint64":
+                    if (targetType.IsAssignableFrom(typeof(UInt64)))
+                        return value.get_uint64();
+                    break;
+                case "null":
+                    if (targetType.IsAssignableFrom(typeof(Nullable)))
+                        return null;
+                    break;
+                case "empty":
+                    if (targetType.IsAssignableFrom(typeof(Nullable)))
+                        return null;
+                    break;
+                case "object":
+                {
+                    FBXJSAPI v = value.get_object();
+                    if (targetType.IsAssignableFrom(typeof(FBXJSAPI)))
+                    {
                         return v;
                     }
-                case "float":
-                    return value.get_float();
-                case "wstring":
-                    return value.get_wstring();
-                case "short":
-                    return value.get_short();
-                case "ushort":
-                    return value.get_ushort();
-                case "char":
-                    return value.get_char();
-                case "uchar":
-                    return value.get_uchar();
-                case "int64":
-                    return value.get_int64();
-                case "uint64":
-                    return value.get_uint64();
-                case "null":
-                    return null;
-                case "empty":
-                    // return Empty;
-                    return null;
-                case "object":
-                    return value.get_object();
+                    else
+                    {
+                        dynamic jsObj = new JSObject(v);
+                        int testInt = jsObj;
+                        Expression conversion = Expression.Convert(Expression.Constant(jsObj), targetType);
+                        Type delegateType = typeof(Func<>).MakeGenericType(targetType);
+                        Delegate conversionDelegate = Expression.Lambda(delegateType, conversion).Compile();
+                        var result = conversionDelegate.DynamicInvoke();
+                        return result;
+                    }
+                }
             }
 
-            throw new InvalidCastException("Cannot cast object of type '" + value.get_type() + "'");
+            throw new InvalidCastException("Cannot cast object of type '" + value.get_type() + "' to type '" + targetType.Name + "'" );
         }
-
+       
         public static FBXResult FromNet(Object value, fbxvariant result)
         {
             if (value is bool)
@@ -97,6 +147,12 @@ namespace FireBreath
             //    result.set_empty();
             else if (value is FBXJSAPI)
                 result.set((FBXJSAPI)value);
+            else if (value is JSObject)
+                result.set(((JSObject)value).wrappedObject);
+            else if (value is MethodObject)
+                result.set(new MethodJSAPI(value));
+            else if (value is Type)
+                result.set(new TypeJSAPI(value));
             else if (value is Object)
                 result.set(new ObjectJSAPI(value));
             else
@@ -106,7 +162,59 @@ namespace FireBreath
             }
             return FBXResult.successful;
         }
-    }
 
+
+        public static FBXResult InvokeOverload(Object obj, IEnumerable<MethodBase> candidates, string name, VariantVector args, fbxvariant result)
+        {
+            object resultObj;
+            return InvokeOverload(obj, candidates, name, args, result, out resultObj);
+        }
+
+        public static FBXResult InvokeOverload(Object obj, IEnumerable<MethodBase> candidates, string name, VariantVector args, fbxvariant result, out object resultObj)
+        {
+            resultObj = null;
+            System.Collections.Generic.List<object> convertedArgs = new System.Collections.Generic.List<object>();
+
+            // todo: cache conversion results for more speed
+            foreach (MethodBase candidate in candidates) 
+            {
+                ParameterInfo[] targetParameters = candidate.GetParameters();
+                int count = Math.Min(args.Count(), targetParameters.Length);
+                object[] converted = new object[count];
+                bool ok = true;
+
+                for ( int i = 0; i < count; i++)
+                {
+                    fbxvariant sourceValue = args[i];
+                    ParameterInfo targetParameter = targetParameters[i];
+                    if ( !ToNet(sourceValue, targetParameter.ParameterType, out converted[i]).success )
+                    {
+                        ok = false;
+                        break;
+                    }
+                }
+
+                if (ok)
+                {
+                    try
+                    {
+                        // todo: this is ugly, factor out
+                        if (name != "*ctor*")
+                            resultObj = candidate.Invoke(obj, converted);
+                        else
+                            resultObj = ((ConstructorInfo)candidate).Invoke(converted);
+                    }
+                    catch (Exception e)
+                    {
+                        return new FBXResult(false, "Error invoking '" + name + "'. Details: " + e);
+                    }
+                    return FromNet(resultObj, result);
+                }
+            }
+
+            return new FBXResult(false, "Could not find matching overload for '" + name + "'");
+        }
+    
+    }
 
 }

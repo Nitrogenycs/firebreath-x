@@ -23,12 +23,16 @@ public:
     virtual FBXResult GetProperty(const std::string& propertyName, fbxvariant& value);  
     virtual FBXResult GetProperty(int idx, fbxvariant& value);
 
+    virtual FBXResult RemoveProperty(const std::string& propertyName);  
+    virtual FBXResult RemoveProperty(int idx);
+
     virtual bool HasProperty(const std::string& propertyName) const;
     virtual bool HasProperty(int idx) const;
     
     virtual bool HasMethod(const std::string& methodName) const;
 
     virtual FBXResult Invoke(const std::string& methodName, const std::vector<fbxvariant>& args, fbxvariant& returnValue);
+    virtual FBXResult Construct(const std::vector<fbxvariant>& args, fbxvariant& returnValue);
 
 protected:
     FB::JSAPIPtr wrapped;

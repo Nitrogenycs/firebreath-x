@@ -46,11 +46,26 @@ namespace TestApp
         {
             return obj.message;
         }
+
+        public string testOverload(int x, double y)
+        {
+            return "double";
+        }
+
+        public string testOverload(int x, string z)
+        {
+            return "string";
+        }
+
+        public object passThrough(object obj)
+        {
+            return obj;
+        }
     }
 
     public class ImplementMe
     {
-        public string message = "This should never appear";
+        public string message = "This is a C# string";
     }
 
     public class Globals
@@ -73,15 +88,18 @@ namespace TestApp
         public System.Type someType = typeof(MyClass);
         public List<object> someList = new List<object>() { new MyClass(), "Hello", new MyClass() };
         public Dictionary<string, object> someDict = new Dictionary<string, object>() { { "item1", new MyClass() }, { "item2", "value2" } };
+        public System.Type ImplementMe = typeof(ImplementMe);
+        public object Object = typeof(object);
 
-        public void run()
+        public FBXJSAPI context;
+
+        public void showTitle()
         {
-            MessageBox.Show("running", "TestApp");
             //context.document.title = "Hello, this is the browser/js window";
-            /*string title = TestApp.context.window.eval("document.title");
+            string title = context.js().window.eval("document.title");
             MessageBox.Show(title, "document.title is...");
 
-            TestApp.context.window.eval(@"
+            /*context.js().window.eval(@"
                 var obj = new MyClass();
                 alert( obj.data );
                 obj.ShowMessage('Hello from JS');
@@ -104,6 +122,8 @@ namespace TestApp
             rootApi = new ObjectJSAPI(globals);
 
             FireBreath.Startup.initialize(entryInfo, rootApi, out context, out options);
+
+            globals.context = context;
         }
 
         static void UnhandledExceptionHandler(object sender, UnhandledExceptionEventArgs args)

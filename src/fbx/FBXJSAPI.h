@@ -24,12 +24,16 @@ public:
     virtual FBXResult GetProperty(const std::string& propertyName, fbxvariant& value) = 0;    
     virtual FBXResult GetProperty(int idx, fbxvariant& value) = 0;
 
+    virtual FBXResult RemoveProperty(const std::string& propertyName) = 0;    
+    virtual FBXResult RemoveProperty(int idx) = 0;
+
     virtual bool HasProperty(const std::string& propertyName) const = 0;
     virtual bool HasProperty(int idx) const = 0;
     
     virtual bool HasMethod(const std::string& methodName) const= 0;
 
     virtual FBXResult Invoke(const std::string& methodName, const std::vector<fbxvariant>& args, fbxvariant& returnValue) = 0;
+    virtual FBXResult Construct(const std::vector<fbxvariant>& args, fbxvariant& returnValue) = 0;
 };
 
 #endif

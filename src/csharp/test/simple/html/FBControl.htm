@@ -49,7 +49,7 @@
 
         function loadExtension()
         {
-            var path = 'C:\\DCSDK\\External\\WebPlayer\\firebreath-x\\src\\csharp\\makefiles\\SimpleTest\\bin\\Release\\SimpleTest.dll';
+            var path = 'C:\\DCSDK\\External\\WebPlayer\\firebreath-x\\src\\csharp\\makefiles\\SimpleTest\\bin\\Debug\\SimpleTest.dll';
             var klass = 'TestApp.Launcher';
             var method = 'launch';
             var options = 'Hello hello';
@@ -109,7 +109,7 @@
                 // accessing property of an object
                 assertVal( result.someObject, 'data', '123' );
                 
-                // accessing non-existent property
+                // accessing non-existent property. Commented. On webkit this returns undefined, on opera it raises
                 assertVal( result, 'idonotexist', undefined );
     
                 // enumerating all members and getting their values
@@ -119,8 +119,12 @@
     
                 // method call on an object
                 result.someObject.ShowMessage('Hello from JS');
-                // creating a new instance of an object (doesn't use 'new')
-                var newObject = result.someType();
+                // method overloads
+                assert( result.someObject.testOverload(1, 'Hello from JS') == 'string', 'Overload error' );
+                assert( result.someObject.testOverload(1, 2) == 'double', 'Overload error' );
+                assertRaises( function() { result.someObject.testOverload('string', 'string') } );
+                // creating a new instance of an object
+                var newObject = new result.someType();
                 
                 // setting property
                 assertVal( newObject, 'changeThis', '123' );
@@ -145,35 +149,63 @@
                 assertVal( newObject, 'data', '123' );
 
                 // testing static properties
-                objA = result.someType();
-                objB = result.someType();
+                objA = new result.someType();
+                objB = new result.someType();
                 assertVal( objA, 'staticInt', 123 );
                 assertVal( objB, 'staticInt', 123 );
                 objA.staticInt = 234;
                 assertVal( objA, 'staticInt', 234 );
                 assertVal( objB, 'staticInt', 234 );
-                
+               
                 // method objects
-                var obj = result.someType();
+                var obj = new result.someType();
                 obj.changeThis = '100';
                 assertVal( obj, 'changeThis', '100' );
                 var func = obj.testMethodObject;
-                var result = func();
-                assert( result == '100', 'Method object error' );
+                var methodResult = func();
+                assert( methodResult == '100', 'Method object error' );
+                               
+                // passing complex js objects to c# (todo)
+                var EmptyJSImplementation = function() {
+                };
+                EmptyJSImplementation.prototype = new result.ImplementMe(); 
+                var myEmptyJSImplementation = new EmptyJSImplementation();
+                assertVal( myEmptyJSImplementation, 'message', 'This is a C# string' );
+                alert('A' + myEmptyJSImplementation.constructor.prototype);
+                assert( obj.testComplexObject( myEmptyJSImplementation ) == 'This is a C# string', 'Complex objects error' );
+                alert('B');
                 
+                var JSImplementation = function(msg) {
+                    this.message = msg;
+                };
+                JSImplementation.prototype = new result.ImplementMe();
+                var myJSImplementation = new JSImplementation('hey from js');
+                assertVal( myJSImplementation, 'message', 'hey from js' );
+                assert( obj.testComplexObject( myJSImplementation ) == 'hey from js', 'Complex objects error' );
+                assertRaises( function() { obj.testComplexObject( { i_have_no_message : '123' } ) } );
+                
+                // remove a property
+                assertVal(result, 'someInt', 42);
+                delete result.someInt;
+                assertVal(result, 'someInt', undefined);
+
+                // identity
+                var test = {};
+                test.prototype = result.Object;
+                assert( obj.passThrough(test) === test );
+
                 // out parameters (todo)
                 var outResult = obj.testOutParameter();
+                alert('D');
                 assertVal( outResult, 0, '123' );
+                alert('E');
                 assertVal( outResult, 1, 456 );
                 
                 // compare sequences (todo)
                 assert( outResult == ['123', 456], 'Sequences do not match' );
                 assert( outResult.Equals(['123', 456]), 'Sequences do not match' );
 
-                // passing complex objects around (todo)
-                var myJSImplementation = { message : 'hey from js' };
-                assert( obj.testComplexObject( myJSImplementation ) == 'hey from js', 'Complex objects error' );
-                assertRaises( function() { obj.testComplexObject( { i_have_no_message : '123' ) }; );
+                result.showTitle();
 
                 alert('All tests completed successfully');
             }
@@ -192,6 +224,38 @@
             // todo: create different JSAPI classes for objects, method objects, types and everything else that's special-cased atm
 
         }
+        
+        function tempTest()
+        {
+            function Mammal(name){ 
+                this.name=name;
+                this.offspring=[];
+            } 
+            Mammal.prototype.haveABaby=function(){ 
+                var newBaby=new Mammal("Baby "+this.name);
+                this.offspring.push(newBaby);
+                return newBaby;
+            } 
+            Mammal.prototype.toString=function(){ 
+                return '[Mammal "'+this.name+'"]';
+            } 
+    
+    
+            Cat.prototype = new Mammal();        // Here's where the inheritance occurs
+            Cat.prototype.constructor=Cat;       // Otherwise instances of Cat would have a constructor of Mammal 
+            function Cat(name){ 
+                this.name=name;
+            } 
+            Cat.prototype.toString=function(){ 
+                return '[Cat "'+this.name+'"]';
+            } 
+    
+            var someAnimal = new Mammal('Mr. Biggles');
+            var myPet = new Cat('Felix');
+            
+            alert(myPet);
+            alert(myPet.constructor.prototype);
+        }
     </script>
 <body onload="load()">
 <object id="plugin0" type="application/x-fbxsimpletestplugincsharp" width="300" height="300">
@@ -201,5 +265,6 @@
 <a href="#" onclick="javascript:testEvent()">Fire event</a> <br />
 <a href="#" onclick="javascript:pluginValid()">alert plugin valid</a> <br />
 <a href="#" onclick="javascript:loadExtension()">load extension</a> <br />
+<a href="#" onclick="javascript:tempTest()">temp test</a> <br />
 </body>
 </html>

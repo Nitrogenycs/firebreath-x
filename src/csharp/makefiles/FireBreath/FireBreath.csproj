@@ -60,11 +60,20 @@
     <Compile Include="..\..\src\Convert.cs">
       <Link>Convert.cs</Link>
     </Compile>
+    <Compile Include="..\..\src\JSObject.cs">
+      <Link>JSObject.cs</Link>
+    </Compile>
+    <Compile Include="..\..\src\Method.cs">
+      <Link>Method.cs</Link>
+    </Compile>
     <Compile Include="..\..\src\Object.cs">
       <Link>Object.cs</Link>
     </Compile>
     <Compile Include="..\..\src\Startup.cs">
       <Link>Startup.cs</Link>
+    </Compile>
+    <Compile Include="..\..\src\Type.cs">
+      <Link>Type.cs</Link>
     </Compile>
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>

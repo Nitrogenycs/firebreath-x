@@ -12,15 +12,14 @@ namespace FireBreath
 {
     public class ObjectJSAPI : FBXJSAPI
     {
-        object wrappedObject;
-        Type type;
+        public object wrappedObject { get; set; }
+        public Type type { get; set; }
 
         public ObjectJSAPI(object WrappedObject)
         {
             wrappedObject = WrappedObject;
             type = wrappedObject.GetType();
         }
-
 
         // ----- member enumeration ------
 
@@ -54,12 +53,21 @@ namespace FireBreath
         }
 
 
+        PropertyInfo getProp(string propertyName)
+        {
+            return (from prop in type.GetProperties() 
+                    where prop.Name == propertyName 
+                    select prop).FirstOrDefault();
+        }
+
         // ----- GetProperty methods ------
 
         FBXResult GetIndexedProperty(object idx, fbxvariant value)
         {
             object obj;
-            PropertyInfo property = type.GetProperty("Item");
+            DefaultMemberAttribute defaultMember = (DefaultMemberAttribute)Attribute.GetCustomAttribute(type, typeof(DefaultMemberAttribute));
+
+            var property = (defaultMember != null) ? getProp(defaultMember.MemberName) : null;
             if (property != null)
             {
                 try
@@ -78,12 +86,13 @@ namespace FireBreath
 
         public override FBXResult GetProperty(int idx, fbxvariant value)
         {
-            //MessageBox.Show("GetProperty #1 " + idx);
             return GetIndexedProperty(idx, value);
         }
 
         public override FBXResult GetProperty(string propertyName, fbxvariant value)
         {
+            if (propertyName == "toString") propertyName = "ToString";
+
             // possible types: all, constructor, custom, event, field, method, nested type, property, typeinfo
             object obj;
             FieldInfo field = type.GetField(propertyName);
@@ -100,8 +109,8 @@ namespace FireBreath
                 return Converter.FromNet(obj, value);
             }
 
-            PropertyInfo property = type.GetProperty(propertyName);
-            if ( property != null )
+            var property = getProp(propertyName);
+            if (property != null)
             {
                 try
                 {
@@ -114,9 +123,10 @@ namespace FireBreath
                 return Converter.FromNet(obj, value);
             }
 
-            MethodInfo method = type.GetMethod(propertyName);
-            if (method != null)
-                return Converter.FromNet( new MethodObject(this.wrappedObject, method), value );
+            // todo: why not use Delegate.CreateDelegate() here? Because we need to convert parameters explicitly to the desired target types?
+            //       maybe we should get rid of variants and replace them with DynamicObjects instead.
+            if ( type.GetMethods().Any( method => method.Name == propertyName ) )
+                return Converter.FromNet(new MethodObject(this.wrappedObject, propertyName), value);
 
             FBXResult result = GetIndexedProperty(propertyName, value);
             if (!result.success)
@@ -133,14 +143,22 @@ namespace FireBreath
 
         // ----- SetProperty methods ------
 
-        FBXResult SetIndexedProperty(object idx, object value)
+        FBXResult SetIndexedProperty(object idx, fbxvariant value)
         {
-            PropertyInfo property = type.GetProperty("Item");
+            object convertedValue;
+
+            DefaultMemberAttribute defaultMember = (DefaultMemberAttribute)Attribute.GetCustomAttribute(type, typeof(DefaultMemberAttribute));
+
+            var property = (defaultMember != null) ? getProp(defaultMember.MemberName) : null;
             if (property != null)
             {
+                FBXResult returnValue = Converter.ToNet(value, property.PropertyType.GetElementType(), out convertedValue);
+                if (!returnValue.success)
+                    return returnValue;
+
                 try
                 {
-                    property.SetValue(this.wrappedObject, value, new object[]{idx});
+                    property.SetValue(this.wrappedObject, value, new object[] { idx });
                 }
                 catch (Exception e)
                 {
@@ -151,28 +169,24 @@ namespace FireBreath
 
             return new FBXResult(false, "Property '" + idx + "' not found");
         }
-        
-        
+
+
         public override FBXResult SetProperty(int idx, fbxvariant value)
         {
-            object result;
-            FBXResult returnValue = Converter.ToNet( value, targetType, out result);
-            if (!returnValue.success)
-                return returnValue;
-
-            return SetIndexedProperty(idx, result);
+            return SetIndexedProperty(idx, value);
         }
 
         public override FBXResult SetProperty(string propertyName, fbxvariant value)
         {
             object convertedValue;
-            FBXResult returnValue = Converter.ToNet(value, targetType, out convertedValue);
-            if (!returnValue.success)
-                return returnValue;
 
             FieldInfo field = type.GetField(propertyName);
             if (field != null)
             {
+                FBXResult returnValue = Converter.ToNet(value, field.FieldType, out convertedValue);
+                if (!returnValue.success)
+                    return returnValue;
+
                 try
                 {
                     field.SetValue(this.wrappedObject, convertedValue);
@@ -184,9 +198,13 @@ namespace FireBreath
                 return returnValue;
             }
 
-            PropertyInfo property = type.GetProperty(propertyName);
+            PropertyInfo property = getProp(propertyName);
             if (property != null)
             {
+                FBXResult returnValue = Converter.ToNet(value, property.PropertyType, out convertedValue);
+                if (!returnValue.success)
+                    return returnValue;
+
                 try
                 {
                     property.SetValue(this.wrappedObject, convertedValue, null);
@@ -195,20 +213,17 @@ namespace FireBreath
                 {
                     return new FBXResult(false, e.ToString());
                 }
+
                 return returnValue;
             }
 
-            /*MethodInfo method = type.GetMethod(propertyName);
-            if (method != null)
-                return (new MethodCall(this.wrappedObject, method)).ConvertFromNet(value);*/
-
-            FBXResult result = SetIndexedProperty(propertyName, convertedValue);
+            FBXResult result = SetIndexedProperty(propertyName, value);
             if (!result.success)
             {
                 int idx;
                 if (Int32.TryParse(propertyName, out idx))
                 {
-                    return SetIndexedProperty(idx, convertedValue);
+                    return SetIndexedProperty(idx, value);
                 }
             }
             return result;
@@ -219,169 +234,20 @@ namespace FireBreath
 
         public override bool HasMethod(string methodName)
         {
-            //MessageBox.Show("HasMethod " + methodName);
             return false;
             //return type.GetMethod(methodName) != null;
         }
 
         public override FBXResult Invoke(string methodName, VariantVector args, fbxvariant result)
         {
-            //MessageBox.Show("Invoke " + methodName);
-            System.Collections.Generic.List<object> convertedArgs = new System.Collections.Generic.List<object>();
-            foreach( fbxvariant arg in args )
-            {
-                object converted;
-                FBXResult returnValue = Converter.ToNet( arg, targetType, out converted );
-                if (!returnValue.success)
-                    return returnValue;
-                convertedArgs.Add(converted);
-            }
-            object[] arguments = convertedArgs.ToArray();
-
-            if (methodName == "")
-            {
-                //MessageBox.Show("InvokeConstructor " + (this.wrappedObject is Type));
-                if (this.wrappedObject is Type)
-                {
-                    // todo: get types from constructor parameters and find best matching convertedArgs
-                    System.Collections.Generic.List<Type> types = new System.Collections.Generic.List<Type>();
-                    foreach (object arg in arguments)
-                    {
-                        types.Add(arg.GetType());
-                    }
-                    ConstructorInfo constructorInfo = ((Type)this.wrappedObject).GetConstructor(types.ToArray());
-                    if (constructorInfo != null)
-                    {
-                        object newObject;
-                        try
-                        {
-                            newObject = constructorInfo.Invoke(arguments);
-                        }
-                        catch (Exception e)
-                        {
-                            return new FBXResult(false, e.ToString());
-                        }
-                        return Converter.FromNet( newObject, result );
-                    }
-                }
-                else if (this.wrappedObject is MethodObject)
-                {
-                    return Converter.FromNet( ((MethodObject)this.wrappedObject).call(arguments), result );
-                }
-                return new FBXResult(false, "Method '" + methodName + "' not callable");
-                //((MethodCall)this.wrappedObject).call(arguments).ConvertFromNet(result);
-            }
-            else
-            {
-                MethodInfo method = type.GetMethod(methodName);
-                if ( method != null)
-                {
-                    object methodResult;
-                    //type.InvokeMember(methodName, BindingFlags.Public /*| BindingFlags.NonPublic */| BindingFlags.Instance | BindingFlags.Static, null, this.wrappedObject, arguments).ConvertFromNet(result);
-                    try
-                    {
-                        methodResult = method.Invoke(this.wrappedObject, arguments);
-                    }
-                    catch (Exception e)
-                    {
-                        return new FBXResult(false, e.ToString());
-                    }
-                    return Converter.FromNet( methodResult, result );
-                }
-            }
-
+            // Invoke default member here if methodName == ""?
             return new FBXResult(false, "Method '" + methodName + "' not found");
         }
-    }
-    
-    public class MethodObject
-    {
-        object obj;
-        MethodInfo info;
 
-        public MethodObject(object Obj, MethodInfo Info)
+        public override FBXResult Construct(VariantVector args, fbxvariant returnValue)
         {
-            obj = Obj;
-            info = Info;
+            return new FBXResult(false, "Object has no constructor");
         }
 
-        public object call(object[] parameters)
-        {
-            return info.Invoke(obj, parameters);
-        }
     }
 }
-
-
-/*
-
-    nitrogenycs	JSAPI::HasProperty is called when you do obj['blabla'] or obj.blbla right?
-	nitrogenycs	Now, when is JSAPI::HasMethod called?
-	nitrogenycs	if HasProperty() is called with a name like "myMethod" should it return the method or not?
-	nitrogenycs	I guess no?
-	taxilian		nitrogenycs: sorry, I'm back
-
-	nitrogenycs	taxilian: no problem
-	taxilian	so that's a tricky question
-	taxilian	it always calls HasProperty
-	taxilian	to see if it is a property or not
-	taxilian	in FireBreath, as of 1.4, HasProperty will return true for methods most of hte time as well
-	taxilian	and then it returns a JSAPI method object
-	taxilian	which is a jsapi object which you can call ->Invoke("", <args>)
-	nitrogenycs	ok
-	taxilian	that's not really required, though; it just makes it so you can do something like:
-	nitrogenycs	So will Invoke ever be called with something else than ""?
-	taxilian	var a = plugin.myMethod
-	taxilian	a(1,2,3)
-	taxilian	well, it could be
-	taxilian	but by default usually isn't
-	nitrogenycs	okay
-	taxilian	I think there is a flag you can set to disable methodobjects
-	taxilian	not sure, 'cause the guy who wrote all this stuff is a slacker who doesn't document things well
-	nitrogenycs	lol
-	nitrogenycs	is it enough to implement only the pure virtuals for a custom JSAPI?
-	nitrogenycs	e.g. are things like the event automatically mapped to the GetProperty/GetMethod things?
-	taxilian	hang on, let me open the class def for JSAPI
-	taxilian	honestly I really should pull some things out of JSAPI because they don't always apply
-	taxilian	the event stuff in particular
-	taxilian	and make JSAPI more of an interface than it is
-	taxilian	ignore all the zone stuff
-	taxilian	ignore all the event stuff
-	nitrogenycs	ok, currently trying to implement it for c# and python, we have the wrappers already written and they compile 
-	taxilian	okay
-	nitrogenycs	ok, I ignored events
-	nitrogenycs	and only had zone for the constructor
-	taxilian	other than those, most of the methods that aren't pure virtual are just specializations of methods that are
-	taxilian	i.e. allow wstring instead of string
-	nitrogenycs	yes
-	nitrogenycs	I used only the pure virtuals
-	nitrogenycs	ok, now last question about the method objects
-	taxilian	HasMethodObject, etc, is just if you want to support those
-	taxilian	it's optional
-	nitrogenycs	method object is so you could do the var a= plugin.myMethod; a(1,2,3); stuff right?
-	taxilian	right
-	nitrogenycs	if I don't implement methodobject I can only do plugin.myMethod(1,2,3)
-	nitrogenycs	correct?
-	taxilian	right
-	nitrogenycs	ok cool
-	nitrogenycs	then I'll implement those as well
-	taxilian	I'd start without
-	taxilian	and then add them
-	taxilian	I'm not totally sure I did it in as clean of a way as it should be
-	taxilian	but look at JSAPIAuto for an example of how it works
-	nitrogenycs	ok
-	taxilian	I think it ends up sometimes getting it from GetProperty instead of GetMethodObject, but I don't remember for sure
-	nitrogenycs	okay
-	nitrogenycs	I'll write some test code to check
-	nitrogenycs	ohhh
-	nitrogenycs	property deletion is triggered by SetProperty(name, undefined)?
-	taxilian	currently, actually, I don't think it's implemented
-	nitrogenycs	ok
-	taxilian	feel free to implement it
-	taxilian	=]
-	taxilian	and send me a patch
-	nitrogenycs	 ok
-	nitrogenycs	i'll first get this going, then I'll refine
-	taxilian	would actually be pretty easy
-
-*/

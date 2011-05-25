@@ -5,6 +5,7 @@
 #define fbxvariant_entry(_type_, name)          \
     void fbxvariant::set(const _type_& value) { \
         var = value;                            \
+        type = #name;                           \
     }                                           \
     _type_ fbxvariant::get_ ## name () {        \
         return var.cast<_type_>();              \
@@ -76,16 +77,18 @@ void fbxvariant::set(const FB::variant& Var)
     type_entry(unsigned char, uchar)
     type_entry(long long, int64)
     type_entry(unsigned long long, uint64)
-    type_entry(FB::FBVoid(), empty)
-    type_entry(FB::FBNull(), null)
+    type_entry(FB::FBVoid, empty)
+    type_entry(FB::FBNull, null)
 //    type_entry(FB::JSAPIPtr, object)
     if (Var.can_be_type<FB::JSAPIPtr>()) {
         var = Var.convert_cast<FB::JSAPIPtr>();
         type = "object";
-    } else if (*varType == typeid(std::string)) {
+    }
+    else if (*varType == typeid(std::string)) {
         var = FB::utf8_to_wstring(Var.cast<std::string>());
         type = "wstring";
-    } else 
+    }
+    else 
     {
         // unknown type here
     }
