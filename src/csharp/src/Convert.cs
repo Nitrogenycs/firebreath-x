@@ -114,7 +114,13 @@ namespace FireBreath
 
             throw new InvalidCastException("Cannot cast object of type '" + value.get_type() + "' to type '" + targetType.Name + "'" );
         }
-       
+
+        public static T ToNet3<T>(fbxvariant value)
+        {
+            object result = ToNet2(value, typeof(T));
+            return (T)result;
+        }
+        
         public static FBXResult FromNet(Object value, fbxvariant result)
         {
             if (value is bool)
@@ -163,6 +169,19 @@ namespace FireBreath
             return FBXResult.successful;
         }
 
+        public static fbxvariant FromNet2(object value)
+        {
+            fbxvariant result = new fbxvariant();
+            FromNet(value, result);
+            return result;
+        }
+
+        public static VariantVector FromNet2(object[] value)
+        {
+            VariantVector result = new VariantVector();
+            foreach (object val in value) result.Add( FromNet2(val) );
+            return result;
+        }
 
         public static FBXResult InvokeOverload(Object obj, IEnumerable<MethodBase> candidates, string name, VariantVector args, fbxvariant result)
         {

@@ -115,7 +115,7 @@
                 // enumerating all members and getting their values
                 var members = [];
                 for (x in result.someObject) members.push( [x, result.someObject[x]] );
-                alert( members.length + ' member(s): ' + members );
+                //alert( members.length + ' member(s): ' + members );
     
                 // method call on an object
                 result.someObject.ShowMessage('Hello from JS');
@@ -164,6 +164,18 @@
                 var func = obj.testMethodObject;
                 var methodResult = func();
                 assert( methodResult == '100', 'Method object error' );
+                
+                // Run C# method which pulls from the dom
+                result.showTitle();
+                
+                /*var req = new XMLHttpRequest();
+                req.open('GET', './FBControl.htm', false);
+                req.send(null);
+                alert(req.responseText);*/
+
+                // Try XMLHTTPRequest for fun
+                result.testXMLHTTPRequest(XMLHttpRequest);
+
                                
                 // passing complex js objects to c# (todo)
                 var EmptyJSImplementation = function() {
@@ -204,8 +216,6 @@
                 // compare sequences (todo)
                 assert( outResult == ['123', 456], 'Sequences do not match' );
                 assert( outResult.Equals(['123', 456]), 'Sequences do not match' );
-
-                result.showTitle();
 
                 alert('All tests completed successfully');
             }

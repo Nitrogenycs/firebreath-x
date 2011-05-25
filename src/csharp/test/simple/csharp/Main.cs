@@ -96,14 +96,41 @@ namespace TestApp
         public void showTitle()
         {
             //context.document.title = "Hello, this is the browser/js window";
-            string title = context.js().window.eval("document.title");
-            MessageBox.Show(title, "document.title is...");
+            //string title = context.js().window.eval("document.title");
+            fbxvariant jsdocument = new fbxvariant();
+            context.GetProperty("document", jsdocument);
+            fbxvariant jstitle = new fbxvariant();
+            Converter.ToNet3<FBXJSAPI>(jsdocument).GetProperty("title", jstitle);
+            MessageBox.Show(Converter.ToNet3<string>(jstitle), "document.title is...");
 
             /*context.js().window.eval(@"
                 var obj = new MyClass();
                 alert( obj.data );
                 obj.ShowMessage('Hello from JS');
             ");*/
+        }
+
+
+        private T getProperty<T>(FBXJSAPI api, string name)
+        {
+            fbxvariant jsvalue = new fbxvariant();
+            api.GetProperty(name, jsvalue);
+            return Converter.ToNet3<T>(jsvalue);
+        }
+
+        public void testXMLHTTPRequest(FBXJSAPI xmlHttpClass)
+        {
+            // var req = new XMLHttpRequest();
+            fbxvariant jsxmlreq = new fbxvariant();
+            xmlHttpClass.Construct(new VariantVector(), jsxmlreq);
+            FBXJSAPI req = Converter.ToNet3<FBXJSAPI>(jsxmlreq);
+            // req.open('GET', 'http://www.google.com', false); 
+            fbxvariant intermediateResult = new fbxvariant();
+            req.Invoke("open", Converter.FromNet2( new object[]{ "GET", "./FBControl.htm", false } ), intermediateResult);
+            // req.send(null);
+            req.Invoke("send",  Converter.FromNet2( new object[] { null } ), intermediateResult);
+            // alert(req.responseText);
+            MessageBox.Show(getProperty<string>(req, "responseText"), "content of http://www.google.com is...");
         }
     }
 
